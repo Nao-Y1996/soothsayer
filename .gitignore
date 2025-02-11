@@ -1,0 +1,9 @@
+tmp
+.env
+log
+app/output/**
+
+**/__pycache__/**
+
+.idea
+*.se1
