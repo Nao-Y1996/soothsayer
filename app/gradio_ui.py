@@ -256,7 +256,7 @@ def update_view(current_index, views: list[AstrologyView]):
     """
     views: list[AstrologyView] = get_view_data()
     if not views:
-        return "データなし", "", "", current_index, views
+        return "データなし", "", "", current_index, views, ""
     if current_index >= len(views):
         current_index = 0
     view = views[current_index]
@@ -272,7 +272,7 @@ def prev_view(current_index: int, view_list: list[AstrologyView]):
     「前へ」ボタン：表示中の AstrologyView インデックスをひとつ戻して内容を返す。
     """
     if not view_list:
-        return "データなし", "", "", current_index
+        return "データなし", "", "", current_index, ""
     current_index = (current_index - 1) % len(view_list)
     view = view_list[current_index]
     info_html = get_info_html(current_index, view_list)
@@ -287,7 +287,7 @@ def next_view(current_index: int, view_list: list[AstrologyView]):
     「次へ」ボタン：表示中の AstrologyView インデックスをひとつ進めて内容を返す。
     """
     if not view_list:
-        return "データなし", "", "", current_index
+        return "データなし", "", "", current_index, ""
     current_index = (current_index + 1) % len(view_list)
     view = view_list[current_index]
     info_html = get_info_html(current_index, view_list)
