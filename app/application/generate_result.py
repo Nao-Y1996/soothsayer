@@ -154,7 +154,7 @@ def result_to_voice(astrology_repo: WesternAstrologyResultRepository) -> None:
                 logger.error(
                     f"Failed to generate voice for astrology result: (message_id={astrology_status.message_id})"
                 )
-                logger.error(e)
+                raise e
         else:
             # get_no_voice_targetで結果が空ではないものを取得しているので、ここに来ることはないはず
             logger.error(

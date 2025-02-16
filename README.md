@@ -165,8 +165,8 @@ mode_type: Literal["test", "prod"] = "test"  # test or prod
 
 ```sql
 SELECT chats.created_at,
-       chats.message - > 'snippet' - > 'displayMessage'    as message,
-       chats.message - > 'authorDetails' - > 'displayName' as name,
+       chats.message -> 'snippet' -> 'displayMessage'    as message,
+       chats.message -> 'authorDetails' -> 'displayName' as name,
        status.required_info,
        status.result,
        status.result_voice_path
@@ -220,7 +220,7 @@ WHERE is_target
 ### 音声再生数
 
 ```sql
-SELECT COUNT(1) as 音声再生数
+SELECT COUNT(1) as 再生数
 FROM western_astrology_statuss
 WHERE is_target
   and required_info != '{}' and result != '' and result_voice_path != '' and is_played

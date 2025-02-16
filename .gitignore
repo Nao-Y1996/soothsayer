@@ -3,6 +3,9 @@ tmp
 log
 app/output/**
 
+pgdata
+grafana
+
 **/__pycache__/**
 
 .idea

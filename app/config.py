@@ -15,7 +15,7 @@ video_dir = Path("output") / "video"
 log_dir = Path("log")
 
 # progress viewのURL
-grafana_url = "http://localhost:3000/goto/gralPCKNR?orgId=1"
+grafana_url = "http://localhost:3000/dashboards"
 
 # TODO testモードで実行しても実際のyoutubeライブ配信のビデオIDが必要なので、ビデオIDもダミーする
 # TODO モードの切り替えを画面から行えるようにする

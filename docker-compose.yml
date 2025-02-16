@@ -1,13 +1,8 @@
-# docker-compose.yml
 version: "3.8"
 
 services:
   postgres:
-    image: postgres:13-alpine  # 公式 Postgres イメージを指定
-    # 独自の Dockerfile を使う場合は以下のように指定
-    # build:
-    #  context: .
-    #  dockerfile: docker/Dockerfile_postgres
+    image: postgres:13-alpine
     environment:
       # .env の変数を展開（docker-compose はカレントディレクトリの .env を自動で読み込む）
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,19 +14,18 @@ services:
       # もし環境変数 POSTGRES_PORT が定義されていて空でなければその値を使い、定義されていない（または空の場合）ならば代わりに 5432 を使う
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      # データ永続化用のボリュームをマウント（名前付きボリューム）
-      - pgdata:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
 
   grafana:
-    image: uranai-grafana:1.0.0 #grafana/grafana:latest
+    image: grafana/grafana:latest
     ports:
       - "3000:3000"
     environment:
       - GF__SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - grafana-storage:/var/lib/grafana
+      - ./grafana:/var/lib/grafana
 
-volumes:
-  pgdata:
-  grafana-storage:
+# volumes:
+  # pgdata:
+  # grafana-storage:

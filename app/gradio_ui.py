@@ -263,7 +263,8 @@ def update_view(current_index, views: list[AstrologyView]):
     info_html = get_info_html(current_index, views)
     chat_html = get_chat_html(view)
     astrology_html = get_astrology_html(view)
-    return info_html, chat_html, astrology_html, current_index, views
+    play_button_name = get_play_button_name(current_index, views)
+    return info_html, chat_html, astrology_html, current_index, views, play_button_name
 
 
 def prev_view(current_index: int, view_list: list[AstrologyView]):
@@ -277,7 +278,8 @@ def prev_view(current_index: int, view_list: list[AstrologyView]):
     info_html = get_info_html(current_index, view_list)
     chat_html = get_chat_html(view)
     astrology_html = get_astrology_html(view)
-    return info_html, chat_html, astrology_html, current_index
+    play_button_name = get_play_button_name(current_index, view_list)
+    return info_html, chat_html, astrology_html, current_index, play_button_name
 
 
 def next_view(current_index: int, view_list: list[AstrologyView]):
@@ -291,7 +293,8 @@ def next_view(current_index: int, view_list: list[AstrologyView]):
     info_html = get_info_html(current_index, view_list)
     chat_html = get_chat_html(view)
     astrology_html = get_astrology_html(view)
-    return info_html, chat_html, astrology_html, current_index
+    play_button_name = get_play_button_name(current_index, view_list)
+    return info_html, chat_html, astrology_html, current_index, play_button_name
 
 
 def play_current_audio(
@@ -323,6 +326,18 @@ def play_current_audio_ui(current_index, view_list):
     return update_view(current_index, view_list)
 
 
+def get_play_button_name(current_index: int, view_list: list[AstrologyView]):
+    """
+    """
+    status = view_list[current_index].status
+    if status.result_voice_path and not status.is_played:
+        msg = "再生(未)"
+    elif status.result_voice_path and status.is_played:
+        msg = "再生(済)"
+    else:
+        msg = "音声未生成"
+    return gr.Button(msg, elem_classes=["custom-play-btn"])
+
 custom_css = """
 .custom-start-btn {
     background-color: #2196F3 !important;
@@ -351,23 +366,24 @@ with gr.Blocks(css=custom_css) as demo:
     state_index = gr.State(0)
     state_views = gr.State([])
 
-    # 更新ボタン：DBから最新データを取得して表示を更新
-    update_btn.click(
-        fn=update_view,
-        inputs=[state_index, state_views],
-        outputs=[
-            info_html_component,
-            chat_html_component,
-            astrology_html_component,
-            state_index,
-            state_views,
-        ],
-    )
-
     with gr.Row():
         btn_prev = gr.Button("前へ")
-        btn_play = gr.Button("再生", elem_classes=["custom-play-btn"])
+        btn_play = gr.Button(" ", elem_classes=["custom-play-btn"])
         btn_next = gr.Button("次へ")
+
+        # 更新ボタン：DBから最新データを取得して表示を更新
+        update_btn.click(
+            fn=update_view,
+            inputs=[state_index, state_views],
+            outputs=[
+                info_html_component,
+                chat_html_component,
+                astrology_html_component,
+                state_index,
+                state_views,
+                btn_play
+            ],
+        )
 
     # 前へボタン：内部状態の current_index を更新して表示を切り替え
     btn_prev.click(
@@ -378,6 +394,7 @@ with gr.Blocks(css=custom_css) as demo:
             chat_html_component,
             astrology_html_component,
             state_index,
+            btn_play
         ],
     )
 
@@ -390,6 +407,7 @@ with gr.Blocks(css=custom_css) as demo:
             chat_html_component,
             astrology_html_component,
             state_index,
+            btn_play
         ],
     )
 
@@ -403,6 +421,7 @@ with gr.Blocks(css=custom_css) as demo:
             astrology_html_component,
             state_index,
             state_views,
+            btn_play
         ],
     )
 

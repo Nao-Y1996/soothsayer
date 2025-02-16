@@ -134,7 +134,7 @@ def txt_to_audiofile(text: str, audiofile_path: str) -> str:
     """
     response = generate_speech_with_style_bert_vit2(text, output_file=audiofile_path)
     if response.success:
-        return response.file_path
+        return str(response.file_path)
     else:
         # logger.error(f"音声ファイルの生成中にエラーが発生しました: {response.error_message}")
         raise Exception(f"{response.error_message}")
