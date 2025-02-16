@@ -443,4 +443,4 @@ with gr.Blocks(css=custom_css) as demo:
     btn_voice_stop.click(fn=stop_voice_generate, inputs=[], outputs=voice_status)
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0", server_port=7860)  # TODO IPやポートは設定に書く
