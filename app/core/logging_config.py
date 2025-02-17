@@ -17,7 +17,7 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": False,
     "formatters": {
         "detail": {
-            "format": "%(asctime)s [%(levelname)s] %(module)s %(funcName)s:%(lineno)d - %(message)s"
+            "format": "%(asctime)s [%(levelname)s] [%(threadName)s] %(module)s %(funcName)s:%(lineno)d - %(message)s"
         },
     },
     "handlers": {
