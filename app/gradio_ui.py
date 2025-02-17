@@ -94,7 +94,7 @@ def get_astrology_html(data: AstrologyData):
     """
     AstrologyData の占星術結果を HTML に整形して返す。
     """
-    return f"<div>{data.status.result}</div>"
+    return f"{data.status.result}"
 
 
 def unpack_latest_state_view(func):
@@ -226,7 +226,12 @@ custom_css = """
     border: 1px solid #ccc;  /* 枠線 */
     height: 300px;         /* 固定高さ（例: 300px） */
     overflow-y: scroll;    /* スクロールバーを表示 */
-    padding: 10px;         /* 内側の余白 */
+}
+
+/* 占い結果のテキストボックスにスタイルを適用 */
+span.svelte-7ddecg p {  /* 要素は実際にHTMLを確認して適切なセレクタを指定 */
+    margin-left: 10px;
+    margin-right: 10px;
 }
 """
 with gr.Blocks(css=custom_css) as demo:
