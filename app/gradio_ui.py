@@ -5,6 +5,7 @@ from app.core import logging_config  # これにより設定が適用される
 import threading
 import time
 from enum import Enum
+from functools import wraps
 from logging import getLogger
 from typing import Optional
 
@@ -21,7 +22,7 @@ from app.application.generate_result import (
     result_to_voice,
 )
 from app.application.store_livechat import start_saving_livechat_message
-from app.core.const import PG_URL, GRAFANA_URL
+from app.core.const import GRAFANA_URL, PG_URL
 from app.domain.repositories import WesternAstrologyResultRepository
 from app.domain.westernastrology import WesternAstrologyStatusEntity
 from app.domain.youtube.live import LiveChatMessageEntity
@@ -41,6 +42,19 @@ class AstrologyView(BaseModel):
     status: WesternAstrologyStatusEntity
 
 
+class LatestGlobalStateView(BaseModel):
+    """
+    最新の画面表示用データを保持するオブジェクト
+    """
+
+    views: list[AstrologyView]
+    info_html: str
+    chat_html: str
+    astrology_html: str
+    current_index: int
+    play_button_name: str
+
+
 def get_view_data() -> list[AstrologyView]:
     """
     画面表示用のオブジェクトのリストを取得する
@@ -57,8 +71,10 @@ def get_view_data() -> list[AstrologyView]:
 def h1_tag(text: str) -> str:
     return f"<h1>{text}</h1>"
 
+
 def h2_tag(text: str) -> str:
     return f"<h2>{text}</h2>"
+
 
 def process_status_text(text: str) -> str:
     return f"<div style='text-align: center; font-size: 18px; font-weight: bold;'>{text}</div>"
@@ -214,10 +230,6 @@ def stop_voice_generate():
 
 # ======= 以下、AstrologyView 表示用の UI ロジック =======
 
-class ViewStatus:
-    def __init__(self, current_index: int, views: list[AstrologyView]):
-        self.is_playable = False
-
 
 def get_info_html(current_index: int, views: list[AstrologyView]):
     """
@@ -250,51 +262,69 @@ def get_astrology_html(view: AstrologyView):
     return f"<div>{view.status.result}</div>"
 
 
-def update_view(current_index, views: list[AstrologyView]):
+def unpack_latest_state_view(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> tuple[AstrologyView, str, str, str, int, str]:
+        global_view = func(*args, **kwargs)
+        print("========================")
+        print(f"global view: {global_view}")
+        print("========================")
+        return (
+            global_view.views,
+            global_view.info_html,
+            global_view.chat_html,
+            global_view.astrology_html,
+            global_view.current_index,
+            global_view.play_button_name,
+        )
+
+    return wrapper  # type: ignore
+
+
+@unpack_latest_state_view
+def update_view(current_index) -> LatestGlobalStateView:
     """
     表示中の AstrologyView を更新して内容を返す。
     """
+    # データを更新する
     views: list[AstrologyView] = get_view_data()
+
     if not views:
-        return "データなし", "", "", current_index, views, ""
+        return LatestGlobalStateView(
+            views=views,
+            info_html="データなし",
+            chat_html="",
+            astrology_html="",
+            current_index=current_index,
+            play_button_name="",
+        )
     if current_index >= len(views):
         current_index = 0
     view = views[current_index]
-    info_html = get_info_html(current_index, views)
-    chat_html = get_chat_html(view)
-    astrology_html = get_astrology_html(view)
-    play_button_name = get_play_button_name(current_index, views)
-    return info_html, chat_html, astrology_html, current_index, views, play_button_name
+    return LatestGlobalStateView(
+        views=views,
+        info_html=get_info_html(current_index, views),
+        chat_html=get_chat_html(view),
+        astrology_html=get_astrology_html(view),
+        current_index=current_index,
+        play_button_name=get_play_button_name(view),
+    )
 
 
 def prev_view(current_index: int, view_list: list[AstrologyView]):
     """
     「前へ」ボタン：表示中の AstrologyView インデックスをひとつ戻して内容を返す。
     """
-    if not view_list:
-        return "データなし", "", "", current_index, ""
     current_index = (current_index - 1) % len(view_list)
-    view = view_list[current_index]
-    info_html = get_info_html(current_index, view_list)
-    chat_html = get_chat_html(view)
-    astrology_html = get_astrology_html(view)
-    play_button_name = get_play_button_name(current_index, view_list)
-    return info_html, chat_html, astrology_html, current_index, play_button_name
+    return update_view(current_index)
 
 
 def next_view(current_index: int, view_list: list[AstrologyView]):
     """
     「次へ」ボタン：表示中の AstrologyView インデックスをひとつ進めて内容を返す。
     """
-    if not view_list:
-        return "データなし", "", "", current_index, ""
     current_index = (current_index + 1) % len(view_list)
-    view = view_list[current_index]
-    info_html = get_info_html(current_index, view_list)
-    chat_html = get_chat_html(view)
-    astrology_html = get_astrology_html(view)
-    play_button_name = get_play_button_name(current_index, view_list)
-    return info_html, chat_html, astrology_html, current_index, play_button_name
+    return update_view(current_index)
 
 
 def play_current_audio(
@@ -323,20 +353,20 @@ def play_current_audio_ui(current_index, view_list):
     repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
     play_current_audio(current_index, view_list, repo)
     # 再生後は最新の view_list を取得するため、update_view を呼び出す
-    return update_view(current_index, view_list)
+    return update_view(current_index)
 
 
-def get_play_button_name(current_index: int, view_list: list[AstrologyView]):
-    """
-    """
-    status = view_list[current_index].status
+def get_play_button_name(view: AstrologyView):
+    """ """
+    status = view.status
     if status.result_voice_path and not status.is_played:
-        msg = "再生(未)"
+        btn_name = "再生(未)"
     elif status.result_voice_path and status.is_played:
-        msg = "再生(済)"
+        btn_name = "再生(済)"
     else:
-        msg = "音声未生成"
-    return gr.Button(msg, elem_classes=["custom-play-btn"])
+        btn_name = "音声未生成"
+    return btn_name
+
 
 custom_css = """
 .custom-start-btn {
@@ -374,14 +404,14 @@ with gr.Blocks(css=custom_css) as demo:
         # 更新ボタン：DBから最新データを取得して表示を更新
         update_btn.click(
             fn=update_view,
-            inputs=[state_index, state_views],
+            inputs=[state_index],
             outputs=[
+                state_views,
                 info_html_component,
                 chat_html_component,
                 astrology_html_component,
                 state_index,
-                state_views,
-                btn_play
+                btn_play,
             ],
         )
 
@@ -390,11 +420,12 @@ with gr.Blocks(css=custom_css) as demo:
         fn=prev_view,
         inputs=[state_index, state_views],
         outputs=[
+            state_views,
             info_html_component,
             chat_html_component,
             astrology_html_component,
             state_index,
-            btn_play
+            btn_play,
         ],
     )
 
@@ -403,11 +434,12 @@ with gr.Blocks(css=custom_css) as demo:
         fn=next_view,
         inputs=[state_index, state_views],
         outputs=[
+            state_views,
             info_html_component,
             chat_html_component,
             astrology_html_component,
             state_index,
-            btn_play
+            btn_play,
         ],
     )
 
@@ -421,7 +453,7 @@ with gr.Blocks(css=custom_css) as demo:
             astrology_html_component,
             state_index,
             state_views,
-            btn_play
+            btn_play,
         ],
     )
 
@@ -430,8 +462,11 @@ with gr.Blocks(css=custom_css) as demo:
         gr.HTML(h2_tag("バックグラウンドの処理の管理"))
     gr.HTML(f"""<a href="{GRAFANA_URL}">Progress View </a>""")
 
-
-    video_id_input = gr.Textbox(interactive=True, placeholder="YouTube動画IDを入力してください", show_label=False)
+    video_id_input = gr.Textbox(
+        interactive=True,
+        placeholder="YouTube動画IDを入力してください",
+        show_label=False,
+    )
     with gr.Row():
         btn_livechat_start = gr.Button(
             "コメント取得 START", elem_classes=["custom-start-btn"]
@@ -452,7 +487,9 @@ with gr.Blocks(css=custom_css) as demo:
         btn_voice_stop = gr.Button("音声生成 STOP", elem_classes=["custom-stop-btn"])
 
     # 各ボタンのクリック時に対応する関数を呼び出す
-    btn_livechat_start.click(fn=start_livechat, inputs=[video_id_input], outputs=livechat_status)
+    btn_livechat_start.click(
+        fn=start_livechat, inputs=[video_id_input], outputs=livechat_status
+    )
     btn_livechat_stop.click(fn=stop_livechat, inputs=[], outputs=livechat_status)
 
     btn_result_start.click(fn=start_result, inputs=[], outputs=result_status)
