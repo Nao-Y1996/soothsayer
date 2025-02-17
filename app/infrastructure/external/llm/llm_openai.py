@@ -5,7 +5,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from app.core.const import OPENAI_API_KEY
-from app.infrastructure.external.llm.llm_interface import (
+from app.infrastructure.external.llm.dtos import (
     Output,
     StructuredOutput,
     Usage,

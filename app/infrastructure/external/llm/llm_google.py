@@ -52,13 +52,11 @@ def get_structured_output(
         top_k=top_k,
         max_output_tokens=max_output_tokens,
     )
-    logger.info(f"llm request prompt: {prompt}")
     result = model.generate_content(
         contents=prompt,
         generation_config=config,
         stream=False,
     )
-    logger.info(f"llm response: {result}")
 
     usage = result.usage_metadata
     val = StructuredOutput(
