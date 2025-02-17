@@ -222,6 +222,12 @@ custom_css = """
     background-color: #4CAF50 !important;
     color: #FFFFFF !important;
 }
+.custom-astrology-html {
+    border: 1px solid #ccc;  /* 枠線 */
+    height: 300px;         /* 固定高さ（例: 300px） */
+    overflow-y: scroll;    /* スクロールバーを表示 */
+    padding: 10px;         /* 内側の余白 */
+}
 """
 with gr.Blocks(css=custom_css) as demo:
     gr.HTML(h1_tag("YouTube Live AI占い"))
@@ -231,7 +237,7 @@ with gr.Blocks(css=custom_css) as demo:
     _ = gr.HTML(value=h2_tag("コメント情報"))
     chat_html_component = gr.HTML(value="")
     _ = gr.HTML(value=h2_tag("占い結果"))
-    astrology_html_component = gr.Markdown(value="")
+    astrology_html_component = gr.Markdown(value="", elem_classes=["custom-astrology-html"])
 
     # 内部状態を保持するための hidden state
     state_index = gr.State(0)
