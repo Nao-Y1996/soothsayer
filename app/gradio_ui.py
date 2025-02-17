@@ -4,7 +4,6 @@ from app.core import logging_config  # これにより設定が適用される
 # isort: on
 import threading
 import time
-from enum import Enum
 from functools import wraps
 from logging import getLogger
 from typing import Optional
@@ -36,8 +35,7 @@ logger = getLogger(__name__)
 engine = create_engine(PG_URL, echo=False)
 
 
-# --- データ表示用のモデル ---
-class AstrologyView(BaseModel):
+class AstrologyData(BaseModel):
     chat_message: LiveChatMessageEntity
     status: WesternAstrologyStatusEntity
 
@@ -47,7 +45,7 @@ class LatestGlobalStateView(BaseModel):
     最新の画面表示用データを保持するオブジェクト
     """
 
-    views: list[AstrologyView]
+    all_data: list[AstrologyData]
     info_html: str
     chat_html: str
     astrology_html: str
@@ -55,17 +53,17 @@ class LatestGlobalStateView(BaseModel):
     play_button_name: str
 
 
-def get_view_data() -> list[AstrologyView]:
+def get_latest_data() -> list[AstrologyData]:
     """
-    画面表示用のオブジェクトのリストを取得する
+    最新のデータを取得する
     """
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
     status_list, chat_message_list = get_astrology_results_for_view(astrology_repo)
-    views = []
+    all_data = []
     for status, message in zip(status_list, chat_message_list, strict=True):
-        view: AstrologyView = AstrologyView(chat_message=message, status=status)
-        views.append(view)
-    return views
+        data: AstrologyData = AstrologyData(chat_message=message, status=status)
+        all_data.append(data)
+    return all_data
 
 
 def h1_tag(text: str) -> str:
@@ -228,49 +226,46 @@ def stop_voice_generate():
         return process_status_text("動作していません")
 
 
-# ======= 以下、AstrologyView 表示用の UI ロジック =======
+# ======= 以下、AstrologyData 表示用の UI ロジック =======
 
 
-def get_info_html(current_index: int, views: list[AstrologyView]):
+def get_info_html(current_index: int, data_list: list[AstrologyData]):
     """
     データの情報を表示する HTML を返す。
     リンク先は別のコンテナで立ち上げているGrafanaのダッシュボード
     """
-    length = len(views)
+    length = len(data_list)
 
     return f"""
 <h3>データ No. {current_index + 1}/{length}</h3>
 """
 
 
-def get_chat_html(view: AstrologyView):
+def get_chat_html(data: AstrologyData):
     """
-    AstrologyView のチャットメッセージを HTML に整形して返す。
+    AstrologyData のチャットメッセージを HTML に整形して返す。
     """
     return f"""
 <div>
-    <span>・from : {view.chat_message.authorDetails.displayName}  ({view.chat_message.snippet.publishedAt})</span></br>
-    <span>・コメント : {view.chat_message.snippet.displayMessage}</span></br>
+    <span>・from : {data.chat_message.authorDetails.displayName}  ({data.chat_message.snippet.publishedAt})</span></br>
+    <span>・コメント : {data.chat_message.snippet.displayMessage}</span></br>
 </div>
 """
 
 
-def get_astrology_html(view: AstrologyView):
+def get_astrology_html(data: AstrologyData):
     """
-    AstrologyView の占星術結果を HTML に整形して返す。
+    AstrologyData の占星術結果を HTML に整形して返す。
     """
-    return f"<div>{view.status.result}</div>"
+    return f"<div>{data.status.result}</div>"
 
 
 def unpack_latest_state_view(func):
     @wraps(func)
-    def wrapper(*args, **kwargs) -> tuple[AstrologyView, str, str, str, int, str]:
-        global_view = func(*args, **kwargs)
-        print("========================")
-        print(f"global view: {global_view}")
-        print("========================")
+    def wrapper(*args, **kwargs) -> tuple[list[AstrologyData], str, str, str, int, str]:
+        global_view: LatestGlobalStateView = func(*args, **kwargs)
         return (
-            global_view.views,
+            global_view.all_data,
             global_view.info_html,
             global_view.chat_html,
             global_view.astrology_html,
@@ -282,89 +277,94 @@ def unpack_latest_state_view(func):
 
 
 @unpack_latest_state_view
-def update_view(current_index) -> LatestGlobalStateView:
+def update_data(current_index) -> LatestGlobalStateView:
     """
-    表示中の AstrologyView を更新して内容を返す。
+    表示中の AstrologyData を更新して内容を返す。
     """
     # データを更新する
-    views: list[AstrologyView] = get_view_data()
+    data_list: list[AstrologyData] = get_latest_data()
 
-    if not views:
+    if not data_list:
         return LatestGlobalStateView(
-            views=views,
+            all_data=data_list,
             info_html="データなし",
             chat_html="",
             astrology_html="",
             current_index=current_index,
             play_button_name="",
         )
-    if current_index >= len(views):
+    if current_index >= len(data_list):
         current_index = 0
-    view = views[current_index]
+    current_data = data_list[current_index]
     return LatestGlobalStateView(
-        views=views,
-        info_html=get_info_html(current_index, views),
-        chat_html=get_chat_html(view),
-        astrology_html=get_astrology_html(view),
+        all_data=data_list,
+        info_html=get_info_html(current_index, data_list),
+        chat_html=get_chat_html(current_data),
+        astrology_html=get_astrology_html(current_data),
         current_index=current_index,
-        play_button_name=get_play_button_name(view),
+        play_button_name=get_play_button_name(current_data),
     )
 
 
-def prev_view(current_index: int, view_list: list[AstrologyView]):
+def prev_data(current_index: int, data_list: list[AstrologyData]) -> LatestGlobalStateView:
     """
-    「前へ」ボタン：表示中の AstrologyView インデックスをひとつ戻して内容を返す。
+    「前へ」ボタン：表示中の AstrologyData インデックスをひとつ戻して内容を返す。
     """
-    current_index = (current_index - 1) % len(view_list)
-    return update_view(current_index)
+    if not data_list:
+        current_index = 0
+    else:
+        current_index = (current_index - 1) % len(data_list)
+    return update_data(current_index)
 
 
-def next_view(current_index: int, view_list: list[AstrologyView]):
+def next_data(current_index: int, data_list: list[AstrologyData]) -> LatestGlobalStateView:
     """
-    「次へ」ボタン：表示中の AstrologyView インデックスをひとつ進めて内容を返す。
+    「次へ」ボタン：表示中の AstrologyData インデックスをひとつ進めて内容を返す。
     """
-    current_index = (current_index + 1) % len(view_list)
-    return update_view(current_index)
+    if not data_list:
+        current_index = 0
+    else:
+        current_index = (current_index + 1) % len(data_list)
+    return update_data(current_index)
 
 
 def play_current_audio(
     current_index,
-    view_list: list[AstrologyView],
+    data_list: list[AstrologyData],
     astro_repo: WesternAstrologyResultRepository,
-):
+) -> None:
     """
-    「再生」ボタン：現在表示中の AstrologyView の voice_path の .wav ファイルを再生する。
+    「再生」ボタン：現在表示中の AstrologyData の voice_path の .wav ファイルを再生する。
     """
-    if not view_list:
+    if not data_list:
         return
-    view = view_list[current_index]
+    data = data_list[current_index]
     # TODO 再生を非同期にする
-    play_audio_file(view.status.result_voice_path)
+    play_audio_file(data.status.result_voice_path)
     # 再生済みフラグを更新
-    view.status.is_played = True
-    astro_repo.save([view.status])
+    data.status.is_played = True
+    astro_repo.save([data.status])
 
 
-def play_current_audio_ui(current_index, view_list):
+def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     """
     UI用のラッパー関数。
-    再生処理後に update_view を呼び出して最新情報を反映する。
+    再生処理後に update_data を呼び出して最新情報を反映する。
     """
     repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
-    play_current_audio(current_index, view_list, repo)
-    # 再生後は最新の view_list を取得するため、update_view を呼び出す
-    return update_view(current_index)
+    play_current_audio(current_index, data_list, repo)
+    return update_data(current_index)
 
 
-def get_play_button_name(view: AstrologyView):
+def get_play_button_name(data: AstrologyData):
     """ """
-    status = view.status
+    status = data.status
     if status.result_voice_path and not status.is_played:
         btn_name = "再生(未)"
     elif status.result_voice_path and status.is_played:
         btn_name = "再生(済)"
     else:
-        btn_name = "音声未生成"
+        btn_name = "音声なし"
     return btn_name
 
 
@@ -384,7 +384,7 @@ custom_css = """
 """
 with gr.Blocks(css=custom_css) as demo:
     gr.HTML(h1_tag("YouTube Live AI占い"))
-    # 表示エリア（3つのパーツ）と内部状態（current_index, view_list）を管理
+
     update_btn = gr.Button("更新")
     info_html_component = gr.HTML(value="")
     _ = gr.HTML(value=h2_tag("コメント情報"))
@@ -394,7 +394,7 @@ with gr.Blocks(css=custom_css) as demo:
 
     # 内部状態を保持するための hidden state
     state_index = gr.State(0)
-    state_views = gr.State([])
+    all_data = gr.State([])
 
     with gr.Row():
         btn_prev = gr.Button("前へ")
@@ -403,10 +403,10 @@ with gr.Blocks(css=custom_css) as demo:
 
         # 更新ボタン：DBから最新データを取得して表示を更新
         update_btn.click(
-            fn=update_view,
+            fn=update_data,
             inputs=[state_index],
             outputs=[
-                state_views,
+                all_data,
                 info_html_component,
                 chat_html_component,
                 astrology_html_component,
@@ -417,10 +417,10 @@ with gr.Blocks(css=custom_css) as demo:
 
     # 前へボタン：内部状態の current_index を更新して表示を切り替え
     btn_prev.click(
-        fn=prev_view,
-        inputs=[state_index, state_views],
+        fn=prev_data,
+        inputs=[state_index, all_data],
         outputs=[
-            state_views,
+            all_data,
             info_html_component,
             chat_html_component,
             astrology_html_component,
@@ -431,10 +431,10 @@ with gr.Blocks(css=custom_css) as demo:
 
     # 次へボタン：内部状態の current_index を更新して表示を切り替え
     btn_next.click(
-        fn=next_view,
-        inputs=[state_index, state_views],
+        fn=next_data,
+        inputs=[state_index, all_data],
         outputs=[
-            state_views,
+            all_data,
             info_html_component,
             chat_html_component,
             astrology_html_component,
@@ -446,13 +446,13 @@ with gr.Blocks(css=custom_css) as demo:
     # 再生ボタン：音声再生後、最新状態を反映
     btn_play.click(
         fn=play_current_audio_ui,
-        inputs=[state_index, state_views],
+        inputs=[state_index, all_data],
         outputs=[
+            all_data,
             info_html_component,
             chat_html_component,
             astrology_html_component,
             state_index,
-            state_views,
             btn_play,
         ],
     )
