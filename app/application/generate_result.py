@@ -160,15 +160,3 @@ def result_to_voice(astrology_repo: WesternAstrologyResultRepository) -> None:
             logger.error(
                 f"No result to generate voice: (message_id={astrology_status.message_id})"
             )
-
-
-def get_astrology_results_for_view(
-    astrology_repo: WesternAstrologyResultRepository,
-) -> tuple[list[WesternAstrologyStatusEntity], list[LiveChatMessageEntity]]:
-    """
-    画面で表示するための占星術結果を取得する
-    """
-    status_list, chat_message_list = (
-        astrology_repo.get_all_prepared_status_and_message()
-    )
-    return status_list, chat_message_list
