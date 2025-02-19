@@ -1,11 +1,20 @@
+from pathlib import Path
+from logging import getLogger
+
 from obswebsocket import requests as obs_requests
 from obswebsocket import obsws
 
+from app.core.const import ROOT
 from app.interfaces.obs.dtos.sceneitem import SceneItem, SceneList, SceneItemTransform
+
+logger = getLogger(__name__)
 
 HOST = "localhost"
 PORT = 4455
 PASSWORD = "1ApID1tERz9JiFQu"
+
+user_name_file_path =  Path(ROOT) / "app" / "interfaces" / "obs" / "texts" / "username.txt"
+comment_file_path =  Path(ROOT) / "app" / "interfaces" / "obs" / "texts" / "comment.txt"
 
 
 def get_scene_list(ws: obsws) -> SceneList:
@@ -41,6 +50,41 @@ def set_scene_item_enabled(ws: obsws, scene_name: str, scene_item_id: int, enabl
     ))
     if not result.status:
         raise Exception(f"Failed to set scene item enabled: {result.datain}")
+
+
+def update_user_name(user_name: str):
+    try:
+        with open(user_name_file_path, mode="w") as f:
+            f.write(user_name)
+    except Exception as e:
+        logger.error(f"Failed to update username: {e}")
+        raise e
+
+def update_comment(comment: str):
+    try:
+        with open(comment_file_path, mode="w") as f:
+            f.write(comment)
+    except Exception as e:
+        logger.error(f"Failed to update comment: {e}")
+        raise e
+
+def get_user_name() -> str:
+    try:
+        with open(user_name_file_path, mode="r") as f:
+            user_name = f.read()
+    except Exception as e:
+        logger.error(f"Failed to get username: {e}")
+        raise e
+    return user_name
+
+def get_comment() -> str:
+    try:
+        with open(comment_file_path, mode="r") as f:
+            comment = f.read()
+    except Exception as e:
+        logger.error(f"Failed to get comment: {e}")
+        raise e
+    return comment
 
 
 def main():
