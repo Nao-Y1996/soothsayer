@@ -32,7 +32,7 @@ from app.interfaces.gradio_app.thread_manager import (
 
 logging_config.configure_logging()
 logger = getLogger(__name__)
-engine = create_engine(PG_URL, echo=False)
+engine = create_engine(PG_URL, echo=False, pool_size=10, max_overflow=5)
 
 
 class AstrologyData(BaseModel):
@@ -128,7 +128,7 @@ def update_data(current_index) -> LatestGlobalStateView:
             chat_html="",
             astrology_html="",
             current_index=current_index,
-            play_button_name="",
+            play_button_name=get_play_button_name(None),
         )
     if current_index >= len(data_list):
         current_index = 0
@@ -197,8 +197,10 @@ def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     return update_data(current_index)
 
 
-def get_play_button_name(data: AstrologyData):
+def get_play_button_name(data: AstrologyData | None):
     """ """
+    if not data:
+        return "音声なし"
     status = data.status
     if status.result_voice_path and not status.is_played:
         btn_name = "再生(未)"
@@ -250,7 +252,7 @@ with gr.Blocks(css=custom_css) as demo:
 
     with gr.Row():
         btn_prev = gr.Button("前へ")
-        btn_play = gr.Button(" ", elem_classes=["custom-play-btn"])
+        btn_play = gr.Button(get_play_button_name(None), elem_classes=["custom-play-btn"])
         btn_next = gr.Button("次へ")
 
         # 更新ボタン：DBから最新データを取得して表示を更新
