@@ -8,7 +8,7 @@ from sqlalchemy import URL
 from app import config
 
 # プロジェクトルートのパス
-ROOT = Path(__file__).parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def is_test():

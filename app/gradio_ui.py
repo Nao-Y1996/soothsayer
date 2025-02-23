@@ -1,5 +1,6 @@
 # isort: off
 from app.core import logging_config  # これにより設定が適用される
+
 # isort: on
 import datetime
 from functools import wraps
@@ -11,6 +12,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.application.audio import play_audio_file
+from app.config import (
+    OBS_SCENE_NAME,
+    OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT,
+)
 from app.core.const import GRAFANA_URL, PG_URL
 from app.domain.repositories import WesternAstrologyResultRepository
 from app.domain.westernastrology import WesternAstrologyStatusEntity
@@ -31,7 +36,9 @@ from app.interfaces.gradio_app.thread_manager import (
 )
 from app.interfaces.obs.utils import (
     get_comment,
+    get_scene_item_id_by_name,
     get_user_name,
+    set_scene_item_enabled,
     update_comment,
     update_user_name,
 )
@@ -64,12 +71,15 @@ def get_latest_data() -> list[AstrologyData]:
     最新のデータを取得する
     """
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
-    status_list, chat_message_list = astrology_repo.get_all_prepared_status_and_message()
+    status_list, chat_message_list = (
+        astrology_repo.get_all_prepared_status_and_message()
+    )
     all_astrology_data = []
     for status, message in zip(status_list, chat_message_list, strict=True):
         data: AstrologyData = AstrologyData(chat_message=message, status=status)
         all_astrology_data.append(data)
     return all_astrology_data
+
 
 def get_jp_time(_datatime: datetime) -> str:
     time_dt_ja = datetime.timedelta(hours=9)
@@ -85,7 +95,9 @@ def get_info_html(current_index: int, data_list: list[AstrologyData]):
         return h2_tag("データ")
 
     length = len(data_list)
-    return h2_tag(f"データ No. {current_index + 1}/{length}（{get_jp_time(current_data.chat_message.snippet.publishedAt)}）")
+    return h2_tag(
+        f"データ No. {current_index + 1}/{length}（{get_jp_time(current_data.chat_message.snippet.publishedAt)}）"
+    )
 
 
 def get_chat_html(data: AstrologyData):
@@ -93,10 +105,13 @@ def get_chat_html(data: AstrologyData):
     AstrologyData のチャットメッセージを HTML に整形して返す。
     """
 
-    return get_user_name_and_comment_html(data.chat_message.authorDetails.displayName, data.chat_message.snippet.displayMessage)
+    return get_user_name_and_comment_html(
+        data.chat_message.authorDetails.displayName,
+        data.chat_message.snippet.displayMessage,
+    )
+
 
 def get_user_name_and_comment_html(user_name: str, comment: str):
-
 
     return f"""
 <div style="padding: 0; margin: 0;">
@@ -104,7 +119,6 @@ def get_user_name_and_comment_html(user_name: str, comment: str):
     <textarea readonly style="width: 100%; height: 70px; border-color: #ccc;">{comment}</textarea>
 </div>
 """
-
 
 
 def get_astrology_html(data: AstrologyData):
@@ -159,6 +173,7 @@ def update_data(current_index) -> LatestGlobalStateView:
         play_button_name=get_play_button_name(current_data),
     )
 
+
 @unpack_latest_state_view
 def prev_data(
     current_index: int, data_list: list[AstrologyData]
@@ -180,6 +195,7 @@ def prev_data(
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
+
 
 @unpack_latest_state_view
 def next_data(
@@ -221,7 +237,7 @@ def play_current_audio(
     data.status.is_played = True
     astro_repo.save([data.status])
 
-
+@unpack_latest_state_view
 def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     """
     UI用のラッパー関数。
@@ -254,6 +270,7 @@ def get_play_button_name(data: AstrologyData | None):
         btn_name = "音声なし"
     return btn_name
 
+
 def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
     """
     OBSに表示する情報を更新して返す
@@ -269,13 +286,24 @@ def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
     update_comment(comment)
 
     # OBSで読み取られるファイルから読み込み（書き込みが成功しているか確認する意味も含む）
-    return gr.HTML(
-        value=get_user_name_and_comment_html(
-            get_user_name(),
-            get_comment()
-        )
+    return gr.HTML(value=get_user_name_and_comment_html(get_user_name(), get_comment()))
+
+
+def enable_user_info_in_obs(enable: bool):
+    source_id_for_user_name = get_scene_item_id_by_name(
+        OBS_SCENE_NAME, OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT
+    )
+    set_scene_item_enabled(
+        scene_name=OBS_SCENE_NAME, scene_item_id=source_id_for_user_name, enabled=enable
     )
 
+
+def hide_user_info():
+    enable_user_info_in_obs(False)
+
+
+def show_user_ingo():
+    enable_user_info_in_obs(True)
 
 
 custom_css = """
@@ -348,11 +376,21 @@ with gr.Blocks(css=custom_css) as demo:
                 obs_show_btn = gr.Button("表示", elem_classes=["obs-show-btn"])
 
     gr.HTML(value=h2_tag("占い結果"))
-    astrology_html_component = gr.Markdown(value="", elem_classes=["custom-astrology-html"])
+    astrology_html_component = gr.Markdown(
+        value="", elem_classes=["custom-astrology-html"]
+    )
 
     # 内部状態を保持するための hidden state
     state_index = gr.State(0)
     all_data = gr.State([])
+
+    # obsの画面の表示を切り替える
+    obs_hide_btn.click(
+        fn=hide_user_info,
+    )
+    obs_show_btn.click(
+        fn=show_user_ingo,
+    )
 
     obs_update_btn.click(
         fn=update_user_info_in_obs,
@@ -362,7 +400,9 @@ with gr.Blocks(css=custom_css) as demo:
 
     with gr.Row():
         btn_prev = gr.Button("前へ")
-        btn_play = gr.Button(get_play_button_name(None), elem_classes=["custom-play-btn"])
+        btn_play = gr.Button(
+            get_play_button_name(None), elem_classes=["custom-play-btn"]
+        )
         btn_next = gr.Button("次へ")
 
         # 更新ボタン：DBから最新データを取得して表示を更新

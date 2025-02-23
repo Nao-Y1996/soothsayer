@@ -1,85 +1,141 @@
-from pathlib import Path
+import functools
 from logging import getLogger
 
-from obswebsocket import requests as obs_requests
 from obswebsocket import obsws
+from obswebsocket import requests as obs_requests
 
-from app.core.const import ROOT
-from app.interfaces.obs.dtos.sceneitem import SceneItem, SceneList, SceneItemTransform
+from app.config import (
+    COMMENT_FILE_PATH,
+    OBS_HOST,
+    OBS_PASSWORD,
+    OBS_PORT,
+    USER_NAME_FILE_PATH,
+)
+from app.interfaces.obs.dtos.sceneitem import SceneItem, SceneItemTransform, SceneList
 
 logger = getLogger(__name__)
 
-HOST = "localhost"
-PORT = 4455
-PASSWORD = "1ApID1tERz9JiFQu"
 
-user_name_file_path =  Path(ROOT) / "app" / "interfaces" / "obs" / "texts" / "username.txt"
-comment_file_path =  Path(ROOT) / "app" / "interfaces" / "obs" / "texts" / "comment.txt"
+def auto_connect(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.info(f"Start {func.__name__}")
+
+        # 第一引数にwsが存在し、かつNoneでなければ再利用
+        if args and isinstance(args[0], obsws) and args[0] is not None:
+            return func(*args, **kwargs)
+        else:
+            # wsが渡されていない場合は新たに作成・接続
+            ws = obsws(host=OBS_HOST, port=OBS_PORT, password=OBS_PASSWORD)
+            ws.connect()
+            logger.info("Connected to OBS")
+            try:
+                # 第一引数としてwsを渡す
+                return func(ws, *args, **kwargs)
+            finally:
+                ws.disconnect()
+                logger.info("Disconnected from OBS")
+
+    return wrapper
 
 
+@auto_connect
 def get_scene_list(ws: obsws) -> SceneList:
     response = ws.call(obs_requests.GetSceneList())
     scene_list: SceneList = SceneList(**response.datain)
     return scene_list
 
 
+@auto_connect
+def get_scene_item_id_by_name(ws: obsws, scene_name: str, source_name: str):
+    logger.info(f"{scene_name=}, {source_name=}")
+    scene_items: list[SceneItem] = get_scene_items(ws, scene_name)
+    scene_item = [
+        scene_item for scene_item in scene_items if scene_item.sourceName == source_name
+    ]
+    scene_item_id = scene_item[0].sceneItemId if scene_item else None
+    if scene_item_id is None:
+        raise Exception(f"Source not found: {source_name}")
+    return scene_item_id
+
+
+@auto_connect
 def get_scene_items(ws: obsws, scene_name: str) -> list[SceneItem]:
+    logger.info(f"{scene_name=}")
     result = ws.call(obs_requests.GetSceneItemList(sceneName=scene_name))
     if not result.status:
-        raise Exception(f"Failed to get scene items: {result.datain}")
+        raise Exception(f"{result.datain}")
     scene_items: list[dict] = result.datain["sceneItems"]
-    scene_items: list[SceneItem] = [SceneItem(**scene_item) for scene_item in scene_items]
+    logger.info(f"{scene_items=}")
+    scene_items: list[SceneItem] = [
+        SceneItem(**scene_item) for scene_item in scene_items
+    ]
     return scene_items
 
 
-def set_scene_item_transform(ws: obsws, scene_name: str, scene_item_id: int, transform: SceneItemTransform):
-    result = ws.call(obs_requests.SetSceneItemTransform(
-        sceneName=scene_name,
-        sceneItemId=scene_item_id,
-        sceneItemTransform=transform.model_dump()
-    ))
+@auto_connect
+def set_scene_item_transform(
+    ws: obsws, scene_name: str, scene_item_id: int, transform: SceneItemTransform
+):
+    logger.info(f"{scene_name=}, {scene_item_id=}, {transform=}")
+    result = ws.call(
+        obs_requests.SetSceneItemTransform(
+            sceneName=scene_name,
+            sceneItemId=scene_item_id,
+            sceneItemTransform=transform.model_dump(),
+        )
+    )
     if not result.status:
-        raise Exception(f"Failed to set scene item transform: {result.datain}")
+        raise Exception(f"{result.datain}")
 
 
-def set_scene_item_enabled(ws: obsws, scene_name: str, scene_item_id: int, enabled: bool):
-    result = ws.call(obs_requests.SetSceneItemEnabled(
-        sceneName=scene_name,
-        sceneItemId=scene_item_id,
-        sceneItemEnabled=enabled
-    ))
+@auto_connect
+def set_scene_item_enabled(
+    ws: obsws, scene_name: str, scene_item_id: int, enabled: bool
+):
+    logger.info(f"{scene_name=}, {scene_item_id=}, {enabled=}")
+    result = ws.call(
+        obs_requests.SetSceneItemEnabled(
+            sceneName=scene_name, sceneItemId=scene_item_id, sceneItemEnabled=enabled
+        )
+    )
     if not result.status:
-        raise Exception(f"Failed to set scene item enabled: {result.datain}")
+        raise Exception(f"Failed to set scene item enabled: {result.datain}, ")
 
 
 def update_user_name(user_name: str):
+    logger.info(f"{user_name=}")
     try:
-        with open(user_name_file_path, mode="w") as f:
+        with open(USER_NAME_FILE_PATH, mode="w") as f:
             f.write(user_name)
     except Exception as e:
         logger.error(f"Failed to update username: {e}")
         raise e
 
+
 def update_comment(comment: str):
+    logger.info(f"{comment=}")
     try:
-        with open(comment_file_path, mode="w") as f:
+        with open(COMMENT_FILE_PATH, mode="w") as f:
             f.write(comment)
     except Exception as e:
         logger.error(f"Failed to update comment: {e}")
         raise e
 
+
 def get_user_name() -> str:
     try:
-        with open(user_name_file_path, mode="r") as f:
+        with open(USER_NAME_FILE_PATH, mode="r") as f:
             user_name = f.read()
     except Exception as e:
         logger.error(f"Failed to get username: {e}")
         raise e
     return user_name
 
+
 def get_comment() -> str:
     try:
-        with open(comment_file_path, mode="r") as f:
+        with open(COMMENT_FILE_PATH, mode="r") as f:
             comment = f.read()
     except Exception as e:
         logger.error(f"Failed to get comment: {e}")
@@ -87,44 +143,36 @@ def get_comment() -> str:
     return comment
 
 
-def main():
-    ws = obsws(host=HOST, port=PORT, password=PASSWORD)
-    ws.connect()
+@auto_connect
+def main(ws: obsws):
+    scene_list: SceneList = get_scene_list(ws)
+    scene_name = scene_list.currentProgramSceneName
+    if scene_name == "サンプルシーン":
 
-    try:
+        # シーン内のアイテム一覧を取得
+        scene_items: list[SceneItem] = get_scene_items(ws, scene_name)
+        for scene_item in scene_items:
 
-        # シーンの一覧を取得
-        scene_list: SceneList = get_scene_list(ws)
-        scene_name = scene_list.currentProgramSceneName
-        if scene_name == "サンプルシーン":
+            if scene_item.sourceName == "username":
 
-            # シーン内のアイテム一覧を取得
-            scene_items: list[SceneItem] = get_scene_items(ws, scene_name)
-            for scene_item in scene_items:
+                # 位置を変更
+                scene_item.sceneItemTransform.positionX = 0.0
+                scene_item.sceneItemTransform.positionY = 300.0
+                set_scene_item_transform(
+                    ws,
+                    scene_name,
+                    scene_item.sceneItemId,
+                    scene_item.sceneItemTransform,
+                )
 
-                if scene_item.sourceName == "username":
+                # 表示/非表示を切り替え
+                set_scene_item_enabled(
+                    ws,
+                    scene_name,
+                    scene_item.sceneItemId,
+                    enabled=(not scene_item.sceneItemEnabled),
+                )
 
-                    # 位置を変更
-                    scene_item.sceneItemTransform.positionX = 0.0
-                    scene_item.sceneItemTransform.positionY = 0.0
-                    set_scene_item_transform(
-                        ws,
-                        scene_name,
-                        scene_item.sceneItemId,
-                        scene_item.sceneItemTransform
-                    )
-
-                    # 表示/非表示を切り替え
-                    set_scene_item_enabled(
-                        ws,
-                        scene_name,
-                        scene_item.sceneItemId,
-                        enabled=(not scene_item.sceneItemEnabled)
-                    )
-
-    finally:
-        # 接続解除
-        ws.disconnect()
 
 if __name__ == "__main__":
     main()
