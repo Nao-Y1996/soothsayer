@@ -1,8 +1,11 @@
+import logging
 from logging import getLogger
 
 from app.application.westernastrology import extract_info_for_astrology,setup_swiss_ephemeris, setup_dir,create_prompt_for_astrology
 
 logger = getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
 
 if __name__ == "__main__":
     from app.infrastructure.external.llm.llm_google import get_output as gemini
