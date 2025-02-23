@@ -16,12 +16,60 @@
 1. このリポジトリをクローンする
 
   ```bash
-  git clone
+  git clone https://github.com/Nao-Y1996/soothsayer.git
   ```
 
-2. 
+2. 依存関係をインストールする
 
-## 起動方法
+  ```bash
+  poetry shell
+  poetry install --no-root
+  ```
+
+3. 環境変数のセット
+
+  .env.sampleをコピーして.envを作成して、全ての環境変数をセットする。
+
+  以下の環境変数はそのままでも良い
+
+  ```bash
+  POSTGRES_USER=user_for_postgres
+  POSTGRES_PASSWORD=password_for_postgres
+  POSTGRES_DB=db_for_postgres
+  POSTGRES_HOST=localhost
+  POSTGRES_PORT=5432
+  ```
+
+4. データベースを立ち上げる
+
+  ```bash
+  docker compose up -d 
+  ```
+
+5. テーブルの初期化
+
+  ```bash
+  alembic upgrade head
+  ```
+
+6. 占いようモジュールのダウンロードおよび占い生成のテスト
+
+  ```bash
+  python setup_ephemeris.py
+  ```
+
+6. アプリケーションを起動する
+  
+  初回は少し時間がかかる
+
+  ```terminal
+  python app/gradio_ui.py
+  ```
+
+
+## 起動/終了方法（初回以降）
+
+### 起動
 
 1. DBとGrafanaを立ち上げる
 
@@ -29,20 +77,21 @@
   docker-compose up -d
   ```
 
-2. マイグレーションを適用する
-
-  ```bash
-  alembic revision --autogenerate -m "init"
-  alembic upgrade head
-  ```
-
-3. アプリケーションを起動する
+2. アプリケーションを起動する
 
   ```terminal
-  python app/gradio_ui.py
+  python gradio_ui.py
   ```
 
-4. ブラウザで`http://localhost:7860/`にアクセスする
+3. ブラウザで`http://localhost:7860/?__theme=light`にアクセスする
+
+### 終了
+
+1. DBとGrafanaを終了する
+
+  ```bash
+  docker-compose down
+  ```
 
 ## 設定
 
@@ -208,7 +257,7 @@ WHERE is_target
   and required_info != '{}' and result != '' and result_voice_path = ''
 ```
 
-## 音声ファイル生成数
+### 音声ファイル生成数
 
 ```sql
 SELECT COUNT(1) as 音声生成数
