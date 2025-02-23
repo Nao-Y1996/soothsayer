@@ -2,6 +2,8 @@ tmp
 .env
 log
 app/output/**
+app/interfaces/obs/texts/username.txt
+app/interfaces/obs/texts/comment.txt
 
 pgdata
 grafana
