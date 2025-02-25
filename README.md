@@ -7,64 +7,74 @@
 
 ## 実行環境
 
-- Python: 3.11を使用しており、ローカルの実行環境を使用
-- DB: PostgreSQLを使用しており、docker compose で立ち上げている
-- Grafana: データの可視化に使用しており、docker compose で立ち上げている
+- Python: 3.11
+- Docker コンテナ
+  - DB: PostgreSQL
+  - Grafana
+
 
 ## 環境構築
 
 1. このリポジトリをクローンする
 
-  ```bash
-  git clone https://github.com/Nao-Y1996/soothsayer.git
-  ```
+    ```bash
+    git clone https://github.com/Nao-Y1996/soothsayer.git
+    ```
 
 2. 依存関係をインストールする
-
-  ```bash
-  poetry shell
-  poetry install --no-root
-  ```
+  
+    ```bash
+    poetry shell
+    poetry install --no-root
+    ```
 
 3. 環境変数のセット
 
-  .env.sampleをコピーして.envを作成して、全ての環境変数をセットする。
+    .env.sampleをコピーして.envを作成して、全ての環境変数をセットする。
+  
+    以下の環境変数はそのままでも良い
 
-  以下の環境変数はそのままでも良い
-
-  ```bash
-  POSTGRES_USER=user_for_postgres
-  POSTGRES_PASSWORD=password_for_postgres
-  POSTGRES_DB=db_for_postgres
-  POSTGRES_HOST=localhost
-  POSTGRES_PORT=5432
-  ```
+    ```bash
+    POSTGRES_USER=user_for_postgres
+    POSTGRES_PASSWORD=password_for_postgres
+    POSTGRES_DB=db_for_postgres
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    ```
 
 4. データベースを立ち上げる
 
-  ```bash
-  docker compose up -d 
-  ```
+    ```bash
+    docker compose up -d 
+    ```
 
 5. テーブルの初期化
 
-  ```bash
-  alembic upgrade head
-  ```
+    ```bash
+    alembic upgrade head
+    ```
 
-6. 占いようモジュールのダウンロードおよび占い生成のテスト
+6. 占い用モジュールのダウンロードおよび占い生成のテスト
 
-  ```bash
-  python setup_ephemeris.py
-  ```
+    ```bash
+    python setup_ephemeris.py
+    ```
 
-6. アプリケーションを起動する
+    実行が失敗する場合は、以下を手動でダウンロードして `app/application/ephemeris` に配置する
+
+    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/seas_18.se1
+    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/semo_18.se1
+    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/sepl_18.se1
+
+7. アプリケーションを起動する
   
-  初回は少し時間がかかる
+    初回は少し時間がかかる
+  
+    ```bash
+    python gradio_ui.py
+    ```
 
-  ```terminal
-  python app/gradio_ui.py
-  ```
+8. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
 
 
 ## 起動/終了方法（初回以降）
@@ -79,15 +89,17 @@
 
 2. アプリケーションを起動する
 
-  ```terminal
+  ```bash
   python gradio_ui.py
   ```
 
-3. ブラウザで`http://localhost:7860/?__theme=light`にアクセスする
+3. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
 
 ### 終了
 
-1. DBとGrafanaを終了する
+1. アプリを起動したターミナルで `Ctrl + C` を押して終了する
+
+2. DBとGrafanaを終了する
 
   ```bash
   docker-compose down
