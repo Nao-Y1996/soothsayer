@@ -6,7 +6,7 @@ authors = ["Nao-Y1996 <60519909+Nao-Y1996@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.14"
+python = ">=3.11,<3.12"
 google-api-python-client = "^2.159.0"
 pydantic = "^2.10.5"
 gradio = "^5.12.0"
