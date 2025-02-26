@@ -7,6 +7,7 @@
 
 ## 実行環境
 
+- poetry: 1.8.5 (poetry ver.2系では依存関係を解決できない）
 - Python: 3.11
 - Docker コンテナ
   - DB: PostgreSQL
