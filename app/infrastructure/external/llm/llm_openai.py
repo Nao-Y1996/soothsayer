@@ -5,11 +5,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from app.core.const import OPENAI_API_KEY
-from app.infrastructure.external.llm.dtos import (
-    Output,
-    StructuredOutput,
-    Usage,
-)
+from app.infrastructure.external.llm.dtos import Output, StructuredOutput, Usage
 
 logger = getLogger(__name__)
 client = OpenAI(api_key=OPENAI_API_KEY)

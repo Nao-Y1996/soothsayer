@@ -1,4 +1,6 @@
 import os
+import random
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +41,35 @@ PG_URL = URL.create(
 
 
 # テスト用のダミーデータ
+def get_current_time_formatted() -> str:
+    now = datetime.now()
+    return now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+sample_names = [
+    "たけし",
+    "さくら",
+    "しんじ",
+    "みか",
+    "ひろし",
+    "あや",
+    "けんた",
+    "ゆかり",
+]
+sample_messages = [
+    "【占い依頼】1985/6/12 午前10時 大阪生まれです",
+    "占い依頼をお願いします！1995年9月21日、15時30分、名古屋生まれです",
+    "占い依頼です。2000/5/5 午後6時 福岡生まれです",
+    "【占い依頼】1978年11月30日、朝7時45分、札幌生まれ。",
+    "占い依頼！1992/3/18 23時 神戸生まれです。",
+    "【占い依頼】2005年8月8日 午前2時 京都生まれです！",
+    "占い依頼です。1989年4月27日、夜10時半、仙台生まれです。",
+    "【占い依頼】1997/12/14 18時45分 広島生まれです。",
+    "占い依頼お願いします！2010年7月7日 午後3時 長崎生まれ。",
+    "【占い依頼】1983年2月1日 深夜1時 東京生まれです。",
+]
+
+
 def get_dummy_live_chat_message(uuid: str) -> dict[str, Any]:
     return {
         "id": uuid,
@@ -48,14 +79,14 @@ def get_dummy_live_chat_message(uuid: str) -> dict[str, Any]:
             "type_": None,
             "liveChatId": "Cg0KC2M5UGhZcHp5ZlZzKicKGFVDR0NaQVlxNVh4b2psX3RTWGNWSmhpURILYzlQaFlwenlmVnM",
             "pollDetails": None,
-            "publishedAt": "2025-02-09 12:00:48",
-            "displayMessage": config.dummy_message,
+            "publishedAt": get_current_time_formatted(),
+            "displayMessage": random.choice(sample_messages),
             "authorChannelId": "UCJZLZ_W-Wo-HOshWEfoVyOA",
             "superChatDetails": None,
             "hasDisplayContent": True,
             "newSponsorDetails": None,
             "userBannedDetails": None,
-            "textMessageDetails": {"messageText": config.dummy_message},
+            "textMessageDetails": {"messageText": random.choice(sample_messages)},
             "superStickerDetails": None,
             "messageDeletedDetails": None,
             "fanFundingEventDetails": None,
@@ -67,7 +98,7 @@ def get_dummy_live_chat_message(uuid: str) -> dict[str, Any]:
             "channelId": "UCJZLZ_W-Wo-HOshWEfoVyOA",
             "channelUrl": "http://www.youtube.com/channel/UCJZLZ_W-Wo-HOshWEfoVyOA",
             "isVerified": False,
-            "displayName": config.dummy_user_name,
+            "displayName": random.choice(sample_names),
             "isChatOwner": False,
             "isChatSponsor": False,
             "isChatModerator": False,
@@ -76,8 +107,8 @@ def get_dummy_live_chat_message(uuid: str) -> dict[str, Any]:
     }
 
 
-# appは以下のディレクトリパスがDBに保存される
-AUDIO_DIR = ROOT / "app" / config.video_dir
+# app配下のディレクトリパスがDBに保存される
+AUDIO_DIR = ROOT / "app" / config.audio_dir
 # TODO 任意のパスでも動作するようにする
 AUDIO_DIR.mkdir(exist_ok=True, parents=True)
 

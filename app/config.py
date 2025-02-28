@@ -4,12 +4,8 @@ from typing import Literal
 # testモードではライブチャットので取得したコメントはdummy_messageで置き換えられる
 mode_type: Literal["test", "prod"] = "test"  # test or prod
 
-# テスト用のダミーデータ
-dummy_message = "【占い依頼】1990/2/3 午後7時 東京生まれです。 "
-dummy_user_name = "太郎"
-
-# 動画ファイルの保存先ディレクトリ（プロジェクトのappディレクトリからの相対パス）
-video_dir = Path("output") / "video"
+# 音声ファイルの保存先ディレクトリ（プロジェクトのappディレクトリからの相対パス）
+audio_dir = Path("output") / "audio"
 
 # ログファイルの保存先ディレクトリ（プロジェクトのルートディレクトリからの相対パス）
 log_dir = Path("log")
@@ -38,8 +34,6 @@ COMMENT_FILE_PATH = (
 # ===================================
 
 if __name__ == "__main__":
-    print(dummy_message)
-    print(dummy_user_name)
     print(video_dir)
     print(log_dir)
     print(grafana_url)

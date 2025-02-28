@@ -13,8 +13,6 @@ from app.infrastructure.external.llm.dtos import StructuredOutput
 from app.infrastructure.external.llm.llm_google import get_structured_output
 from app.infrastructure.external.llm.utils import pydantic_to_markdown
 
-
-
 logger = getLogger(__name__)
 
 
@@ -54,7 +52,9 @@ def get_coordinates(api_key: str, place: str):
         location = data["results"][0]["geometry"]["location"]
         return LocationEntity(latitude=location["lat"], longitude=location["lng"])
     else:
-        raise Exception(f"Failed to get coordinates for {place}. Status: {status}, response: {data}")
+        raise Exception(
+            f"Failed to get coordinates for {place}. Status: {status}, response: {data}"
+        )
 
 
 def extract_info_for_astrology(_input: str) -> InfoForAstrologyEntity:
