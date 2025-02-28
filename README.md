@@ -54,19 +54,7 @@
     alembic upgrade head
     ```
 
-6. 占い用モジュールのダウンロードおよび占い生成のテスト
-
-    ```bash
-    python setup_ephemeris.py
-    ```
-
-    実行が失敗する場合は、以下を手動でダウンロードして `app/application/ephemeris` に配置する
-
-    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/seas_18.se1
-    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/semo_18.se1
-    - https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/sepl_18.se1
-
-7. アプリケーションを起動する
+6. アプリケーションを起動する
   
     初回は少し時間がかかる
   
@@ -74,7 +62,7 @@
     python gradio_ui.py
     ```
 
-8. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
+7. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
 
 
 ## 起動/終了方法（初回以降）

@@ -1,10 +1,7 @@
-import os
 import urllib.parse
 from logging import getLogger
-from pathlib import Path
 
 import httpx
-import swisseph as swe
 from flatlib import const
 from flatlib.chart import Chart
 from flatlib.datetime import Datetime
@@ -16,7 +13,6 @@ from app.infrastructure.external.llm.dtos import StructuredOutput
 from app.infrastructure.external.llm.llm_google import get_structured_output
 from app.infrastructure.external.llm.utils import pydantic_to_markdown
 
-setup_dir = Path(__file__).parent / "ephemeris"
 
 
 logger = getLogger(__name__)
@@ -58,7 +54,7 @@ def get_coordinates(api_key: str, place: str):
         location = data["results"][0]["geometry"]["location"]
         return LocationEntity(latitude=location["lat"], longitude=location["lng"])
     else:
-        raise Exception(f"Failed to get coordinates for {place}. Status: {status}")
+        raise Exception(f"Failed to get coordinates for {place}. Status: {status}, response: {data}")
 
 
 def extract_info_for_astrology(_input: str) -> InfoForAstrologyEntity:
@@ -92,8 +88,6 @@ def create_prompt_for_astrology(
     """
     西洋占星術の占い用のプロンプトを作成する。
     """
-
-    swe.set_ephe_path(str(setup_dir))
 
     # 誕生日と誕生時刻
     flatlib_datetime = Datetime(birthday, birth_time, "+00:00")
@@ -213,45 +207,6 @@ def create_prompt_for_astrology(
         prompt += f"【{name}さんの悩み】\n{worries}\n"
 
     return prompt
-
-
-def setup_swiss_ephemeris(ephemeris_dir: str | Path) -> None:
-    """
-    Swiss Ephemerisをセットアップする.
-
-    Args:
-        ephemeris_dir (str): エフェメリスデータを保存するディレクトリのパス.
-    """
-    os.makedirs(ephemeris_dir, exist_ok=True)
-
-    # ファイルの存在を確認
-    required_files = ["seas_18.se1", "semo_18.se1", "sepl_18.se1"]
-    files_exist = all(
-        os.path.exists(os.path.join(ephemeris_dir, f)) for f in required_files
-    )
-
-    if not files_exist:
-        logger.info("Downloading required files...")
-        base_url = "https://github.com/flatangle/flatlib/raw/master/flatlib/resources/swefiles/"
-        for file in required_files:
-            target_path = os.path.join(ephemeris_dir, file)
-            if not os.path.exists(target_path):
-                os.system(f"wget -O {target_path} {base_url + file}")
-
-    # テスト計算を実行
-    try:
-        jd = swe.julday(2025, 1, 28, 12.0)
-        result = swe.calc_ut(jd, swe.SUN)
-        logger.info("============ Test calculation ============")
-        logger.info("Test calculation successful!")
-        logger.info(f"Julian Date: {jd}")
-        logger.info(f"Sun position: {result}")
-        logger.info("Swiss Ephemeris setup completed successfully!")
-    except Exception as e:
-        logger.info(f"Error during test calculation: {str(e)}")
-    finally:
-        logger.info("==========================================")
-    logger.info("setup_swiss_ephemeris done !\n")
 
 
 if __name__ == "__main__":
