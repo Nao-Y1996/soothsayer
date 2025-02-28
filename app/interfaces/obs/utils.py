@@ -106,7 +106,7 @@ def set_scene_item_enabled(
 def update_user_name(user_name: str):
     logger.info(f"{user_name=}")
     try:
-        with open(USER_NAME_FILE_PATH, mode="w") as f:
+        with open(USER_NAME_FILE_PATH, mode="w", encoding="utf-8") as f:
             f.write(user_name)
     except Exception as e:
         logger.error(f"Failed to update username: {e}")
@@ -116,7 +116,7 @@ def update_user_name(user_name: str):
 def update_comment(comment: str):
     logger.info(f"{comment=}")
     try:
-        with open(COMMENT_FILE_PATH, mode="w") as f:
+        with open(COMMENT_FILE_PATH, mode="w", encoding="utf-8") as f:
             f.write(comment)
     except Exception as e:
         logger.error(f"Failed to update comment: {e}")
@@ -125,7 +125,7 @@ def update_comment(comment: str):
 
 def get_user_name() -> str:
     try:
-        with open(USER_NAME_FILE_PATH, mode="r") as f:
+        with open(USER_NAME_FILE_PATH, mode="r", encoding="utf-8") as f:
             user_name = f.read()
     except Exception as e:
         logger.error(f"Failed to get username: {e}")
@@ -135,7 +135,7 @@ def get_user_name() -> str:
 
 def get_comment() -> str:
     try:
-        with open(COMMENT_FILE_PATH, mode="r") as f:
+        with open(COMMENT_FILE_PATH, mode="r", encoding="utf-8") as f:
             comment = f.read()
     except Exception as e:
         logger.error(f"Failed to get comment: {e}")
