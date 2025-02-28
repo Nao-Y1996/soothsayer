@@ -34,7 +34,6 @@ COMMENT_FILE_PATH = (
 # ===================================
 
 if __name__ == "__main__":
-    print(video_dir)
     print(log_dir)
     print(grafana_url)
     print(OBS_HOST)
