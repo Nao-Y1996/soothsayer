@@ -1,7 +1,9 @@
 import urllib.parse
 from logging import getLogger
+from pathlib import Path
 
 import httpx
+import swisseph as swe
 from flatlib import const
 from flatlib.chart import Chart
 from flatlib.datetime import Datetime
@@ -14,6 +16,8 @@ from app.infrastructure.external.llm.llm_google import get_structured_output
 from app.infrastructure.external.llm.utils import pydantic_to_markdown
 
 logger = getLogger(__name__)
+
+setup_dir = Path(__file__).parent / "ephemeris"
 
 
 def get_coordinates(api_key: str, place: str):
@@ -88,6 +92,7 @@ def create_prompt_for_astrology(
     """
     西洋占星術の占い用のプロンプトを作成する。
     """
+    swe.set_ephe_path(str(setup_dir))
 
     # 誕生日と誕生時刻
     flatlib_datetime = Datetime(birthday, birth_time, "+00:00")
