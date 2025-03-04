@@ -237,6 +237,7 @@ def play_current_audio(
     data.status.is_played = True
     astro_repo.save([data.status])
 
+
 @unpack_latest_state_view
 def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     """
@@ -493,14 +494,40 @@ with gr.Blocks(css=custom_css) as demo:
     # 各ボタンのクリック時に対応する関数を呼び出す
     btn_livechat_start.click(
         fn=start_livechat, inputs=[video_id_input], outputs=livechat_status
+    ).then(
+        fn=div_center_bold_text,
+        inputs=[livechat_status],
+        outputs=livechat_status,
     )
-    btn_livechat_stop.click(fn=stop_livechat, inputs=[], outputs=livechat_status)
+    btn_livechat_stop.click(fn=stop_livechat, inputs=[], outputs=livechat_status).then(
+        fn=div_center_bold_text,
+        inputs=[livechat_status],
+        outputs=livechat_status,
+    )
 
-    btn_result_start.click(fn=start_result, inputs=[], outputs=result_status)
-    btn_result_stop.click(fn=stop_result, inputs=[], outputs=result_status)
+    btn_result_start.click(fn=start_result, inputs=[], outputs=result_status).then(
+        fn=div_center_bold_text,
+        inputs=[result_status],
+        outputs=result_status,
+    )
+    btn_result_stop.click(fn=stop_result, inputs=[], outputs=result_status).then(
+        fn=div_center_bold_text,
+        inputs=[result_status],
+        outputs=result_status,
+    )
 
-    btn_voice_start.click(fn=start_voice_generate, inputs=[], outputs=voice_status)
-    btn_voice_stop.click(fn=stop_voice_generate, inputs=[], outputs=voice_status)
+    btn_voice_start.click(
+        fn=start_voice_generate, inputs=[], outputs=voice_status
+    ).then(
+        fn=div_center_bold_text,
+        inputs=[voice_status],
+        outputs=voice_status,
+    )
+    btn_voice_stop.click(fn=stop_voice_generate, inputs=[], outputs=voice_status).then(
+        fn=div_center_bold_text,
+        inputs=[voice_status],
+        outputs=voice_status,
+    )
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)  # TODO IPやポートは設定に書く

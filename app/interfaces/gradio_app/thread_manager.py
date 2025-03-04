@@ -17,7 +17,6 @@ from app.infrastructure.repositoriesImpl import (
     WesternAstrologyResultRepositoryImpl,
     YoutubeLiveChatMessageRepositoryImpl,
 )
-from app.interfaces.gradio_app.constract_html import div_center_bold_text
 
 logger = getLogger(__name__)
 engine = create_engine(PG_URL, echo=False)
@@ -64,30 +63,38 @@ def generate_result_loop(stop_event: threading.Event):
     """占星術結果生成の無限ループ処理"""
     livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    logger.info("start loop for generating result.")
     while not stop_event.is_set():
-        # 占いの準備
-        prepare_for_astrology(astrology_repo, livechat_repo)
-        # 占い結果の生成
-        generate_astrology_result(astrology_repo)
-        # 停止フラグのチェック間隔として sleep
-        time.sleep(5)
+        try:
+            # 占いの準備
+            prepare_for_astrology(astrology_repo, livechat_repo)
+            # 占い結果の生成
+            generate_astrology_result(astrology_repo)
+            # 停止フラグのチェック間隔として sleep
+            time.sleep(1)
+        except Exception as e:
+            logger.error("Error in result generation loop: " + str(e))
     logger.info("Result generation loop terminated.")
 
 
 def generate_voice_loop(stop_event: threading.Event):
     """占星術結果を音声変換する無限ループ処理"""
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    logger.info("start loop for generating voice audio.")
     while not stop_event.is_set():
-        result_to_voice(astrology_repo)
-        time.sleep(0.1)
-    logger.info("Voice generation loop terminated.")
+        try:
+            result_to_voice(astrology_repo)
+            time.sleep(0.1)
+        except Exception as e:
+            logger.error("Error in voice audio generation loop: " + str(e))
+    logger.info("Voice audio generation loop terminated.")
 
 
 # --- 各処理の開始／停止用関数 ---
 def start_livechat(yt_video_id: str):
     """ライブチャット保存処理のスレッドを開始"""
     if not yt_video_id:
-        return div_center_bold_text("YouTube動画IDが入力されていません。")
+        return "YouTube動画IDが入力されていません。"
     global threads, stop_events
     if threads["livechat"] is None or not threads["livechat"].is_alive():
         stop_events["livechat"] = threading.Event()
@@ -97,9 +104,9 @@ def start_livechat(yt_video_id: str):
             name="LivechatThread",
         )
         threads["livechat"].start()
-        return div_center_bold_text("開始しました")
+        return "開始しました"
     else:
-        return div_center_bold_text("実行中です")
+        return "実行中です"
 
 
 def stop_livechat():
@@ -111,9 +118,9 @@ def stop_livechat():
         ].set()  # 無限ループ内でイベントをチェックしているため停止可能
         threads["livechat"].join(timeout=2)
         threads["livechat"] = None
-        return div_center_bold_text("停止しました")
+        return "停止しました"
     else:
-        return div_center_bold_text("動作していません")
+        return "動作していません"
 
 
 def start_result():
@@ -127,9 +134,9 @@ def start_result():
             name="ResultThread",
         )
         threads["result"].start()
-        return div_center_bold_text("開始しました")
+        return "開始しました"
     else:
-        return div_center_bold_text("既に実行中です")
+        return "既に実行中です"
 
 
 def stop_result():
@@ -139,9 +146,9 @@ def stop_result():
         stop_events["result"].set()
         threads["result"].join(timeout=2)
         threads["result"] = None
-        return div_center_bold_text("停止しました")
+        return "停止しました"
     else:
-        return div_center_bold_text("動作していません")
+        return "動作していません"
 
 
 def start_voice_generate():
@@ -155,9 +162,9 @@ def start_voice_generate():
             name="VoiceThread",
         )
         threads["voice"].start()
-        return div_center_bold_text("開始しました")
+        return "開始しました"
     else:
-        return div_center_bold_text("既に実行中です")
+        return "既に実行中です"
 
 
 def stop_voice_generate():
@@ -167,6 +174,6 @@ def stop_voice_generate():
         stop_events["voice"].set()
         threads["voice"].join(timeout=2)
         threads["voice"] = None
-        return div_center_bold_text("停止しました")
+        return "停止しました"
     else:
-        return div_center_bold_text("動作していません")
+        return "動作していません"

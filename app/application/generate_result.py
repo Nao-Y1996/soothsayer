@@ -127,6 +127,8 @@ def result_to_voice(astrology_repo: WesternAstrologyResultRepository) -> None:
     target_astrology_status_list: list[WesternAstrologyStatusEntity] = (
         astrology_repo.get_no_voice_target(limit=1)
     )  # TODO limitは設定で変えるようにする
+    if not target_astrology_status_list:
+        return
 
     # 占い結果を音声化
     logger.info("Start generating voice for astrology result list.")

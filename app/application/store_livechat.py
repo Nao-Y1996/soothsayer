@@ -44,9 +44,9 @@ def start_saving_livechat_message(
     live_chat_id = get_live_chat_id(youtube, video_id)
 
     if not live_chat_id:
-        logger.info("ライブチャットIDが取得できませんでした。")
-        return
-    logger.info(f"取得した liveChatId: {live_chat_id}")
+        raise ValueError(f"failed to get live chat id from video id {video_id}")
+
+    logger.info(f"Successfully fetched liveChatId: {live_chat_id}")
 
     next_page_token: Optional[str] = None
     chat_count = 0

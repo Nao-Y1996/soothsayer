@@ -1,4 +1,5 @@
 import csv
+from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from googleapiclient.discovery import build  # type: ignore
@@ -6,6 +7,8 @@ from googleapiclient.errors import HttpError  # type: ignore
 from pydantic import ValidationError
 
 from app.domain.youtube.live import LiveChatMessageEntity
+
+logger = getLogger(__name__)
 
 
 def get_youtube_service(api_key: str) -> Any:
@@ -25,12 +28,14 @@ def get_live_chat_id(youtube: Any, video_id: str) -> Optional[str]:
             youtube.videos().list(part="liveStreamingDetails", id=video_id).execute()
         )
     except HttpError as e:
-        print(f"動画情報の取得中にエラーが発生しました: {e}")
+        logger.warning(f"Failed to fetch video info: {e}")
         return None
 
     items: List[Dict[str, Any]] = video_response.get("items", [])
     if not items:
-        print("指定した動画が見つかりません。")
+        logger.warning(
+            f"Could not find video with id: {video_id}, response: {video_response}"
+        )
         return None
 
     live_details: Dict[str, Any] = items[0].get("liveStreamingDetails", {})
@@ -55,7 +60,7 @@ def fetch_chat_messages(
         )
         return response
     except HttpError as e:
-        print(f"チャットメッセージの取得中にエラーが発生しました: {e}")
+        logger.warning(f"Failed to fetch chat messages: {e}")
         return {}
 
 
@@ -69,7 +74,9 @@ def convert_chat_messages(items: List[Dict[str, Any]]) -> List[LiveChatMessageEn
             message = LiveChatMessageEntity.model_validate(item)
             messages.append(message)
         except ValidationError as e:
-            print(f"メッセージのパースに失敗しました: {e}")
+            logger.warning(
+                f"Failed to parse livechat message to LiveChatMessageEntity: {e}"
+            )
             continue
     return messages
 

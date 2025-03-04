@@ -1,8 +1,7 @@
 from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -15,10 +14,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from sqlalchemy import URL
-from dotenv import load_dotenv
-from app.core.const import ROOT, PG_URL
 import os
+
+from dotenv import load_dotenv
+from sqlalchemy import URL
+
+from app.core.const import PG_URL, ROOT
 
 config.set_main_option("sqlalchemy.url", PG_URL)
 
@@ -30,17 +31,20 @@ config.set_main_option("sqlalchemy.url", PG_URL)
 # -----------------------------------
 # ここでテーブルが定義されたモジュールをインポートしないとマイグレーション時にalembicがテーブルを認識できなかった
 from app.infrastructure import tables
+
 # printに特に意味はないが、tablesを使用しておくことで静的解析などで消されることを防ぐ
 print(tables.WesternAstrologyStatusOrm.metadata)
 print(tables.YoutubeLivechatMessageOrm.metadata)
 # -----------------------------------
-from app.infrastructure import  db_common
+from app.infrastructure import db_common
+
 target_metadata = db_common.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -60,7 +64,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_schemas = True
+        include_schemas=True,
     )
 
     with context.begin_transaction():
@@ -82,9 +86,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_schemas = True
+            connection=connection, target_metadata=target_metadata, include_schemas=True
         )
 
         with context.begin_transaction():
