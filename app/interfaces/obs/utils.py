@@ -109,7 +109,7 @@ def update_user_name(user_name: str):
         with open(USER_NAME_FILE_PATH, mode="w", encoding="utf-8") as f:
             f.write(user_name)
     except Exception as e:
-        logger.error(f"Failed to update username: {e}")
+        logger.exception(f"Failed to update username: {e}")
         raise e
 
 
@@ -119,7 +119,7 @@ def update_comment(comment: str):
         with open(COMMENT_FILE_PATH, mode="w", encoding="utf-8") as f:
             f.write(comment)
     except Exception as e:
-        logger.error(f"Failed to update comment: {e}")
+        logger.exception(f"Failed to update comment: {e}")
         raise e
 
 
@@ -128,7 +128,7 @@ def get_user_name() -> str:
         with open(USER_NAME_FILE_PATH, mode="r", encoding="utf-8") as f:
             user_name = f.read()
     except Exception as e:
-        logger.error(f"Failed to get username: {e}")
+        logger.exception(f"Failed to get username: {e}")
         raise e
     return user_name
 
@@ -138,7 +138,7 @@ def get_comment() -> str:
         with open(COMMENT_FILE_PATH, mode="r", encoding="utf-8") as f:
             comment = f.read()
     except Exception as e:
-        logger.error(f"Failed to get comment: {e}")
+        logger.exception(f"Failed to get comment: {e}")
         raise e
     return comment
 

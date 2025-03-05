@@ -131,13 +131,15 @@ def txt_to_audiofile(text: str, audiofile_path: str) -> str:
 
     Returns:
         str: 音声ファイルのパス
+
+    Raises:
+        IOError: 音声ファイルの生成に失敗した場合
     """
     response = generate_speech_with_style_bert_vit2(text, output_file=audiofile_path)
     if response.success:
         return str(response.file_path)
     else:
-        # logger.error(f"音声ファイルの生成中にエラーが発生しました: {response.error_message}")
-        raise Exception(f"{response.error_message}")
+        raise IOError(response.error_message)
 
 
 def play_txt_as_audio(text: str) -> None:

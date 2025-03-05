@@ -43,7 +43,7 @@ def save_youtube_livechat_messages_loop(yt_video_id: str, stop_event: threading.
     """
     livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
-    logger.info("start loop for saving livechat messages.")
+    logger.info("Start thread for saving livechat messages.")
     while not stop_event.is_set():
         try:
             start_saving_livechat_message(
@@ -53,17 +53,17 @@ def save_youtube_livechat_messages_loop(yt_video_id: str, stop_event: threading.
                 stop_event=stop_event,  # 例：内部でチェックするための引数として渡す
             )
         except Exception as e:
-            logger.error("Error in livechat saving loop: " + str(e))
+            logger.exception("Failed to save live chat messages: " + str(e))
         # 万一内部処理がブロックしても、一定時間ごとに停止フラグをチェックするために sleep する
         time.sleep(1)
-    logger.info("Livechat saving loop terminated.")
+    logger.info("Stopped Thread for saving livechat messages.")
 
 
 def generate_result_loop(stop_event: threading.Event):
     """占星術結果生成の無限ループ処理"""
     livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
-    logger.info("start loop for generating result.")
+    logger.info("Start Thread for generating result.")
     while not stop_event.is_set():
         try:
             # 占いの準備
@@ -73,21 +73,21 @@ def generate_result_loop(stop_event: threading.Event):
             # 停止フラグのチェック間隔として sleep
             time.sleep(1)
         except Exception as e:
-            logger.error("Error in result generation loop: " + str(e))
-    logger.info("Result generation loop terminated.")
+            logger.exception("Failed to generate result: " + str(e))
+    logger.info("Stopped Thread for generating result.")
 
 
 def generate_voice_loop(stop_event: threading.Event):
     """占星術結果を音声変換する無限ループ処理"""
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
-    logger.info("start loop for generating voice audio.")
+    logger.info("Start Thread for generating voice audio.")
     while not stop_event.is_set():
         try:
             result_to_voice(astrology_repo)
             time.sleep(0.1)
         except Exception as e:
-            logger.error("Error in voice audio generation loop: " + str(e))
-    logger.info("Voice audio generation loop terminated.")
+            logger.exception("Failed to generate voice audio: " + str(e))
+    logger.info("Stopped Thread for generating voice audio.")
 
 
 # --- 各処理の開始／停止用関数 ---
