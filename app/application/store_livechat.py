@@ -49,55 +49,50 @@ def start_saving_livechat_message(
     logger.info(f"Successfully fetched liveChatId: {live_chat_id}")
 
     next_page_token: Optional[str] = None
-    chat_count = 0
+    while True:
+        if stop_event and stop_event.is_set():
+            break
+        chat_response: Dict[str, Any] = fetch_chat_messages(
+            youtube, live_chat_id, next_page_token
+        )
+        if not chat_response:
+            logger.info("チャットレスポンスが空です。終了します。")
+            break
 
-    try:
-        while True:
-            if stop_event and stop_event.is_set():
-                break
-            chat_response: Dict[str, Any] = fetch_chat_messages(
-                youtube, live_chat_id, next_page_token
-            )
-            if not chat_response:
-                logger.info("チャットレスポンスが空です。終了します。")
-                break
+        chat_list: list[LiveChatMessageEntity] = extract_chat_from_response(
+            chat_response
+        )
 
-            chat_list: list[LiveChatMessageEntity] = extract_chat_from_response(
-                chat_response
-            )
+        # チャットメッセージを保存
+        livechat_repo.save(chat_list)
+        if logger.level == DEBUG:
+            for chat in chat_list:
+                logger.debug(f"chat: {chat}")
+                who = chat.authorDetails.displayName
+                content = None
+                if chat.snippet.hasDisplayContent:
+                    content = chat.snippet.displayMessage
+                logger.debug(f"chat saved: {who} - {content}")
 
-            # チャットメッセージを保存
-            livechat_repo.save(chat_list)
-            if logger.level == DEBUG:
-                for chat in chat_list:
-                    logger.debug(f"chat: {chat}")
-                    who = chat.authorDetails.displayName
-                    content = None
-                    if chat.snippet.hasDisplayContent:
-                        content = chat.snippet.displayMessage
-                    logger.debug(f"chat saved: {who} - {content}")
+        # 占い対象の時は、占いの対象か判断して保存
+        if astrology_repo:
+            chat_ids: list[str] = [chat.id for chat in chat_list]
+            is_target_list: list[bool] = is_astrology_target(chat_list)
+            astrology_repo.add_initial(chat_ids, is_target_list)
 
-            # 占い対象の時は、占いの対象か判断して保存
-            if astrology_repo:
-                chat_ids: list[str] = [chat.id for chat in chat_list]
-                is_target_list: list[bool] = is_astrology_target(chat_list)
-                astrology_repo.add_initial(chat_ids, is_target_list)
+        next_page_token = chat_response.get("nextPageToken")
+        if not next_page_token:
+            logger.info("すべてのメッセージを取得しました。")
+            break
 
-            next_page_token = chat_response.get("nextPageToken")
-            if not next_page_token:
-                logger.info("すべてのメッセージを取得しました。")
-                break
+        polling_interval_ms = chat_response.get("pollingIntervalMillis")
+        polling_interval: float = (
+            (int(polling_interval_ms) / 1000.0)
+            if polling_interval_ms
+            else POLLING_INTERVAL_DEFAULT
+        )
 
-            polling_interval_ms = chat_response.get("pollingIntervalMillis")
-            polling_interval: float = (
-                (int(polling_interval_ms) / 1000.0)
-                if polling_interval_ms
-                else POLLING_INTERVAL_DEFAULT
-            )
-
-            time.sleep(polling_interval)
-    finally:
-        logger.info(f"取得したデータ数: {chat_count}")
+        time.sleep(polling_interval)
 
 
 if __name__ == "__main__":
