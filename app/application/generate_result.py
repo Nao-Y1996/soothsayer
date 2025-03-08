@@ -33,6 +33,8 @@ def prepare_for_astrology(
     target_astrology_status_list: list[WesternAstrologyStatusEntity] = (
         astrology_repo.get_not_prepared_target(limit=3)
     )  # TODO limitは設定で変えるようにする
+    if not target_astrology_status_list:
+        return
 
     # 占い結果がない占星術ステータスのメッセージIDを取得
     target_astrology_status_message_ids = [
@@ -86,6 +88,8 @@ def generate_astrology_result(
         astrology_repo.get_prepared_target_with_no_result(limit=3)
     )  # TODO limitは設定で変えるようにする
     message_ids = [_status.message_id for _status in target_astrology_status_list]
+    if not message_ids:
+        return
 
     # 占い結果を生成
     logger.info(f"Start generating astrology result list. message_ids: {message_ids}")
