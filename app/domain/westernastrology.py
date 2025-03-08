@@ -34,16 +34,16 @@ class InfoForAstrologyEntity(BaseModel):
         worries (str): Worries of the human.
     """
 
-    name: str | None = Field(..., description="Name of the human")
+    name: str | None = Field(..., description="Name of the human. default is ``")
     birthday: str = Field(
         ..., description="Birthday of the human in the format YYYY/MM/DD"
     )
     birth_time: str = Field(
-        ..., description="Birth time of the human in the format HH:MM"
+        ..., description="Birth time of the human in the format HH:MM. default is ''"
     )
-    birthplace: str = Field(..., description="Birth place of the human")
+    birthplace: str = Field(..., description="Birth place of the human. default is ``")
 
-    worries: str = Field("", description="Worries of the human")
+    worries: str = Field("", description="Worries of the human. default is ``")
 
     @classmethod
     @field_validator("birthday")
@@ -62,6 +62,21 @@ class InfoForAstrologyEntity(BaseModel):
         except ValueError:
             raise ValueError("birth_time must be in the format HH:MM")
         return v
+
+    def supplement_by_default(self):
+        """
+        Supplement the following fields with default values if they are empty.
+        - birth_time: "00:00"
+        - birthplace: "Tokyo"
+        - worries: ""
+        name and birthday are not supplemented.
+        """
+        if not self.birth_time:
+            self.birth_time = "00:00"
+        if not self.birthplace:
+            self.birthplace = "Tokyo"
+        if not self.worries:
+            self.worries = ""
 
     def satisfied_all(self) -> bool:
         """

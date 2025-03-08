@@ -54,8 +54,12 @@ def prepare_for_astrology(
             if livechat.id == astrology_status.message_id
         ][0]
         info: InfoForAstrologyEntity = extract_info_for_astrology(
-            _input=f"NAME:{target_livechat.authorDetails.displayName}, INFO:{target_livechat.snippet.displayMessage}"
+            name=target_livechat.authorDetails.displayName,
+            _input=target_livechat.snippet.displayMessage,
         )
+        # 不足情報を補完
+        info.supplement_by_default()
+        # 必要情報が正しいフォーマットで揃っているか確認
         if info.satisfied_all():
             astrology_status.required_info = info
         else:

@@ -61,7 +61,7 @@ def get_coordinates(api_key: str, place: str):
         )
 
 
-def extract_info_for_astrology(_input: str) -> InfoForAstrologyEntity:
+def extract_info_for_astrology(name: str, _input: str) -> InfoForAstrologyEntity:
     """
     Extract human information from input text for astrology.
     """
@@ -69,7 +69,7 @@ def extract_info_for_astrology(_input: str) -> InfoForAstrologyEntity:
     result: StructuredOutput = get_structured_output(
         cls=InfoForAstrologyEntity,
         prompt=f"""
-extract name, birthday, birth_time, birthplace from give info.
+extract birthday, birth_time, birthplace from give info.
 format is below.
 
 ## format
@@ -79,6 +79,7 @@ format is below.
 {_input}
 """,
     )
+    result.model.name = name
     return result.model  # noqa
 
 
@@ -218,7 +219,8 @@ if __name__ == "__main__":
     from app.infrastructure.external.llm.llm_google import get_output as gemini
 
     human_info = extract_info_for_astrology(
-        "太郎です。2000年の12月3日の午後7時に東京で生まれです"
+        name="太郎",
+        _input="2000年の12月3日の午後7時に東京で生まれです",
         # "太郎です。2000年の12月3日の午後7時に東京で生まれです。お昼にたべらケーキが美味しかった！でも最近忙しすぎ..."
     )
     if not human_info.satisfied_all():
