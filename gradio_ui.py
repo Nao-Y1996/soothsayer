@@ -26,7 +26,7 @@ from app.interfaces.gradio_app.constract_html import (
     h1_tag,
     h2_tag,
 )
-from app.interfaces.gradio_app.thread_manager import (
+from app.application.thread_manager import (
     start_livechat,
     start_result,
     start_voice_generate,

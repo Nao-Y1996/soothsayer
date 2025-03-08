@@ -37,7 +37,7 @@ stop_events: dict[str, Optional[threading.Event]] = {
 
 
 # --- 各処理を停止可能な形にラップする ---
-def save_youtube_livechat_messages_loop(yt_video_id: str, stop_event: threading.Event):
+def saving_livechat_message_thread(yt_video_id: str, stop_event: threading.Event):
     """
     ライブチャットの保存処理（無限ループ）
     """
@@ -59,7 +59,7 @@ def save_youtube_livechat_messages_loop(yt_video_id: str, stop_event: threading.
     logger.info("Stopped Thread for saving livechat messages.")
 
 
-def generate_result_loop(stop_event: threading.Event):
+def generate_result_thread(stop_event: threading.Event):
     """占星術結果生成の無限ループ処理"""
     livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
@@ -77,7 +77,7 @@ def generate_result_loop(stop_event: threading.Event):
     logger.info("Stopped Thread for generating result.")
 
 
-def generate_voice_loop(stop_event: threading.Event):
+def generate_voice_thread(stop_event: threading.Event):
     """占星術結果を音声変換する無限ループ処理"""
     astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
     logger.info("Start Thread for generating voice audio.")
@@ -99,7 +99,7 @@ def start_livechat(yt_video_id: str):
     if threads["livechat"] is None or not threads["livechat"].is_alive():
         stop_events["livechat"] = threading.Event()
         threads["livechat"] = threading.Thread(
-            target=save_youtube_livechat_messages_loop,
+            target=saving_livechat_message_thread,
             kwargs={"yt_video_id": yt_video_id, "stop_event": stop_events["livechat"]},
             name="LivechatThread",
         )
@@ -129,7 +129,7 @@ def start_result():
     if threads["result"] is None or not threads["result"].is_alive():
         stop_events["result"] = threading.Event()
         threads["result"] = threading.Thread(
-            target=generate_result_loop,
+            target=generate_result_thread,
             kwargs={"stop_event": stop_events["result"]},
             name="ResultThread",
         )
@@ -157,7 +157,7 @@ def start_voice_generate():
     if threads["voice"] is None or not threads["voice"].is_alive():
         stop_events["voice"] = threading.Event()
         threads["voice"] = threading.Thread(
-            target=generate_voice_loop,
+            target=generate_voice_thread,
             kwargs={"stop_event": stop_events["voice"]},
             name="VoiceThread",
         )
