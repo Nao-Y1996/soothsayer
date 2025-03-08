@@ -122,7 +122,7 @@ def generate_astrology_result(
             )
 
     logger.info(
-        f"Finished generating astrology result list. Generated {len(target_astrology_status_list)} astrology results. (message_ids: {target_astrology_status_message_ids})"
+        f"Finished generating astrology result list. Generated {len(target_astrology_status_list)} astrology results. (message_ids: {message_ids})"
     )
 
 
