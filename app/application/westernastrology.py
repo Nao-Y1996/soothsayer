@@ -9,7 +9,7 @@ from flatlib.chart import Chart
 from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 
-from app.core.const import GOOGLE_API_KEY
+from app.core.const import CITY_LOCATION_MAP, PREFECTURE_LOCATION_MAP
 from app.domain.westernastrology import InfoForAstrologyEntity, LocationEntity
 from app.infrastructure.external.llm.dtos import StructuredOutput
 from app.infrastructure.external.llm.llm_google import get_structured_output
@@ -20,45 +20,20 @@ logger = getLogger(__name__)
 setup_dir = Path(__file__).parent / "ephemeris"
 
 
-def get_coordinates(api_key: str, place: str):
+def get_coordinates(place: str) -> LocationEntity:
     """
-    指定された場所名から緯度と経度を取得する
-
-    Args:
-        api_key (str): Google Maps Geocoding APIのAPIキー。
-        place (str): 検索する場所の名前や住所。
-
-    Returns:
-        location (Location): 緯度と経度を含むLocationオブジェクト。
-
-    Raises:
-        Exception: 座標の取得に失敗した場合。
+    Get static coordinates for a place.
     """
-    # エンコードされた場所名を作成
-    encoded_place = urllib.parse.quote(place)
-
-    # APIエンドポイントのURLを構築
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_place}&key={api_key}"
-
-    # HTTPクライアントを非同期で作成
-    with httpx.Client() as client:
-        # APIリクエストを送信
-        response = client.get(url)
-        response.raise_for_status()  # HTTPエラーが発生した場合例外を発生させる
-
-        # レスポンスをJSONとして解析
-        data = response.json()
-
-    # ステータスを確認
-    status = data.get("status")
-    if status == "OK":
-        # 最初の結果から緯度と経度を取得
-        location = data["results"][0]["geometry"]["location"]
-        return LocationEntity(latitude=location["lat"], longitude=location["lng"])
-    else:
-        raise Exception(
-            f"Failed to get coordinates for {place}. Status: {status}, response: {data}"
-        )
+    # 都道府県名から緯度経度を取得
+    latitude_longitude = PREFECTURE_LOCATION_MAP.get(place, None)
+    # 緯度経度を取得できない場合は、市町村名から緯度経度を取得
+    if not latitude_longitude:
+        latitude_longitude = CITY_LOCATION_MAP.get(place, None)
+    # 緯度経度を取得できない場合は、東京の緯度経度を返す
+    if not latitude_longitude:
+        latitude_longitude = PREFECTURE_LOCATION_MAP["東京"]
+    latitude, longitude = latitude_longitude
+    return LocationEntity(latitude=latitude, longitude=longitude)
 
 
 def extract_info_for_astrology(name: str, _input: str) -> InfoForAstrologyEntity:
@@ -99,7 +74,7 @@ def create_prompt_for_astrology(
     flatlib_datetime = Datetime(birthday, birth_time, "+00:00")
 
     # 生まれた場所
-    location = get_coordinates(place=birthplace, api_key=GOOGLE_API_KEY)
+    location = get_coordinates(place=birthplace)
     latitude = location.latitude
     longitude = location.longitude
     pos = GeoPos(latitude, longitude)

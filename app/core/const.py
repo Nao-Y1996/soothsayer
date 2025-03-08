@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
+import pandas as pd
 from sqlalchemy import URL
 
 from app import config
@@ -38,6 +39,34 @@ PG_URL = URL.create(
     host=POSTGRES_HOST,
     port=int(POSTGRES_PORT),
 ).render_as_string(hide_password=False)
+
+
+# 緯度軽度のデータを読み込む
+city_data_csv = ROOT / "app" / "core" / "location_data" / "city.csv"
+prefecture_data_csv = ROOT / "app" / "core" / "location_data" / "prefecture.csv"
+city_df = pd.read_csv(city_data_csv, encoding="utf-8", skipinitialspace=True)
+prefecture_df = pd.read_csv(
+    prefecture_data_csv, encoding="utf-8", skipinitialspace=True
+)
+
+CITY_LOCATION_MAP = {}
+for i, row in city_df.iterrows():
+    city = row.city
+    CITY_LOCATION_MAP[city] = (row.latitude, row.longitude)
+    if city.endswith("市"):
+        CITY_LOCATION_MAP[city[:-1]] = (row.latitude, row.longitude)
+
+PREFECTURE_LOCATION_MAP = {}
+for i, row in prefecture_df.iterrows():
+    prefecture = row.prefecture
+    PREFECTURE_LOCATION_MAP[prefecture] = (row.latitude, row.longitude)
+
+    if (
+        prefecture.endswith("県")
+        or prefecture.endswith("府")
+        or prefecture.endswith("都")
+    ):
+        PREFECTURE_LOCATION_MAP[prefecture[:-1]] = (row.latitude, row.longitude)
 
 
 # テスト用のダミーデータ
@@ -130,3 +159,5 @@ if __name__ == "__main__":
     print(f"POSTGRES_HOST: {POSTGRES_HOST}")
     print(f"POSTGRES_PORT: {POSTGRES_PORT}")
     print(f"PG_URL: {PG_URL}")
+
+    print(CITY_LOCATION_MAP)
