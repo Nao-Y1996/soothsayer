@@ -6,8 +6,6 @@ from functools import wraps
 from logging import getLogger
 
 import gradio as gr
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
 from app.application.audio import play_audio_file
 from app.config import (
@@ -52,7 +50,6 @@ from app.interfaces.obs.ui import (
 
 logging_config.configure_logging()
 logger = getLogger(__name__)
-engine = create_engine(PG_URL, echo=False, pool_size=10, max_overflow=5)
 
 
 def initialize_db():
@@ -67,7 +64,7 @@ def get_latest_data() -> list[AstrologyData]:
     """
     最新のデータを取得する
     """
-    astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    astrology_repo = WesternAstrologyResultRepositoryImpl()
     status_list, chat_message_list = (
         astrology_repo.get_all_prepared_status_and_message()
     )
@@ -194,7 +191,7 @@ def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     UI用のラッパー関数。
     再生処理後に update_data を呼び出して最新情報を反映する。
     """
-    repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    repo = WesternAstrologyResultRepositoryImpl()
     play_current_audio(current_index, data_list, repo)
     current_data = data_list[current_index]
     # return update_data()ともできるが、連打すると更新処理が多すぎてコネクションプールが枯渇する可能性がある

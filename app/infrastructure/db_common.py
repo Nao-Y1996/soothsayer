@@ -3,11 +3,20 @@ from datetime import datetime
 from logging import getLogger
 
 from sqlalchemy import TIMESTAMP, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    declared_attr,
+    mapped_column,
+    sessionmaker,
+)
 
 from app.core.const import PG_URL
 
 logger = getLogger(__name__)
+
+engine = create_engine(PG_URL, echo=False, pool_size=10, max_overflow=5)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 # ヘルパー関数: CamelCase を snake_case に変換する

@@ -4,7 +4,6 @@ from logging import getLogger
 from typing import Optional
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
 from app.application.generate_result import (
     generate_astrology_result,
@@ -41,8 +40,8 @@ def saving_livechat_message_thread(yt_video_id: str, stop_event: threading.Event
     """
     ライブチャットの保存処理（無限ループ）
     """
-    livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
-    astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
+    astrology_repo = WesternAstrologyResultRepositoryImpl()
     logger.info("Start thread for saving livechat messages.")
     while not stop_event.is_set():
         try:
@@ -61,8 +60,8 @@ def saving_livechat_message_thread(yt_video_id: str, stop_event: threading.Event
 
 def generate_result_thread(stop_event: threading.Event):
     """占星術結果生成の無限ループ処理"""
-    livechat_repo = YoutubeLiveChatMessageRepositoryImpl(session=Session(bind=engine))
-    astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
+    astrology_repo = WesternAstrologyResultRepositoryImpl()
     logger.info("Start Thread for generating result.")
     while not stop_event.is_set():
         try:
@@ -79,7 +78,7 @@ def generate_result_thread(stop_event: threading.Event):
 
 def generate_voice_thread(stop_event: threading.Event):
     """占星術結果を音声変換する無限ループ処理"""
-    astrology_repo = WesternAstrologyResultRepositoryImpl(session=Session(bind=engine))
+    astrology_repo = WesternAstrologyResultRepositoryImpl()
     logger.info("Start Thread for generating voice audio.")
     while not stop_event.is_set():
         try:

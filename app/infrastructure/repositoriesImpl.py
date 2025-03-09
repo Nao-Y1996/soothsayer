@@ -14,6 +14,7 @@ from app.domain.westernastrology import (
     WesternAstrologyStatusEntity,
 )
 from app.domain.youtube.live import LiveChatMessageEntity
+from app.infrastructure.db_common import SessionLocal
 from app.infrastructure.tables import (
     WesternAstrologyStatusOrm,
     YoutubeLivechatMessageOrm,
@@ -23,9 +24,6 @@ logger = getLogger(__name__)
 
 
 class YoutubeLiveChatMessageRepositoryImpl(YoutubeLiveChatMessageRepository):
-
-    def __init__(self, session: Session):
-        self.session: Session = session
 
     def save(self, messages: list[LiveChatMessageEntity]) -> None:
         """
@@ -59,9 +57,15 @@ class YoutubeLiveChatMessageRepositoryImpl(YoutubeLiveChatMessageRepository):
             .returning(YoutubeLivechatMessageOrm.__table__)
         )
         logger.debug(f"stm: {stm}")
-        result = self.session.execute(stm)
-        self.session.commit()
-        logger.debug(f"result: {result}")
+        with SessionLocal() as session:
+            try:
+                result = session.execute(stm)
+                session.commit()
+                logger.debug(f"result: {result}")
+            except Exception as e:
+                session.rollback()
+                logger.exception(f"Failed to save messages: {e}")
+                raise e
 
     def get_by_message_ids(self, message_ids: list[str]) -> list[LiveChatMessageEntity]:
         if not message_ids:
@@ -71,21 +75,22 @@ class YoutubeLiveChatMessageRepositoryImpl(YoutubeLiveChatMessageRepository):
         stmt = select(YoutubeLivechatMessageOrm).where(
             YoutubeLivechatMessageOrm.message["id"].astext.in_(message_ids)
         )
-        rows = self.session.execute(stmt).scalars().all()
+        with SessionLocal() as session:
+            try:
+                rows = session.execute(stmt).scalars().all()
+                # 取得した行からエンティティに変換して返す
+                results: list[LiveChatMessageEntity] = []
+                for row in rows:
+                    entity = LiveChatMessageEntity(**row.message)
+                    results.append(entity)
 
-        # 取得した行からエンティティに変換して返す
-        results: list[LiveChatMessageEntity] = []
-        for row in rows:
-            entity = LiveChatMessageEntity(**row.message)
-            results.append(entity)
-
-        return results
+                return results
+            except Exception as e:
+                logger.exception(f"Failed to get messages by message_ids: {e}")
+                raise e
 
 
 class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
-
-    def __init__(self, session: Session):
-        self.session: Session = session
 
     def save(self, status_list: list[WesternAstrologyStatusEntity]) -> None:
         """
@@ -118,8 +123,14 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 "is_played": stmt.excluded.is_played,
             },
         )
-        self.session.execute(stmt)
-        self.session.commit()
+        with SessionLocal() as session:
+            try:
+                session.execute(stmt)
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.exception(f"Failed to save status: {e}")
+                raise e
 
     def get_not_prepared_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
         stmt = (
@@ -138,19 +149,23 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             .order_by(YoutubeLivechatMessageOrm.created_at)
             .limit(limit)
         )
-
-        orm_objects = self.session.execute(stmt).scalars().all()
-        return [
-            WesternAstrologyStatusEntity(
-                message_id=obj.message_id,
-                is_target=obj.is_target,
-                required_info=None,
-                result=obj.result,
-                result_voice_path=obj.result_voice_path,
-                is_played=obj.is_played,
-            )
-            for obj in orm_objects
-        ]
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                return [
+                    WesternAstrologyStatusEntity(
+                        message_id=obj.message_id,
+                        is_target=obj.is_target,
+                        required_info=None,
+                        result=obj.result,
+                        result_voice_path=obj.result_voice_path,
+                        is_played=obj.is_played,
+                    )
+                    for obj in orm_objects
+                ]
+            except Exception as e:
+                logger.exception(f"Failed to get not prepared target: {e}")
+                raise e
 
     def get_all_prepared_status_and_message(
         self,
@@ -169,26 +184,35 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             )
             .order_by(YoutubeLivechatMessageOrm.created_at)
         )
-        # scalars().all()だと複数のオブジェクトのうち最初のオブジェクトしかが返ってこない
-        # このケースだと、WesternAstrologyStatusOrmしか取得できない
-        orm_objects = self.session.execute(stmt).all()
-        # そのため、scalars()は使用せずにall()で全てのオブジェクトを取得する必要がある
-        status_entities: list[WesternAstrologyStatusEntity] = []
-        livechat_messages: list[LiveChatMessageEntity] = []
+        with SessionLocal() as session:
+            try:
+                # scalars().all()だと複数のオブジェクトのうち最初のオブジェクトしかが返ってこない
+                # このケースだと、WesternAstrologyStatusOrmしか取得できない
+                orm_objects = session.execute(stmt).all()
+                # そのため、scalars()は使用せずにall()で全てのオブジェクトを取得する必要がある
+                status_entities: list[WesternAstrologyStatusEntity] = []
+                livechat_messages: list[LiveChatMessageEntity] = []
 
-        for status_obj, livechat_obj in orm_objects:
-            status_entity = WesternAstrologyStatusEntity(
-                message_id=status_obj.message_id,
-                is_target=status_obj.is_target,
-                required_info=InfoForAstrologyEntity(**status_obj.required_info),
-                result=status_obj.result,
-                result_voice_path=status_obj.result_voice_path,
-                is_played=status_obj.is_played,
-            )
-            status_entities.append(status_entity)
-            livechat_messages.append(LiveChatMessageEntity(**livechat_obj.message))
+                for status_obj, livechat_obj in orm_objects:
+                    status_entity = WesternAstrologyStatusEntity(
+                        message_id=status_obj.message_id,
+                        is_target=status_obj.is_target,
+                        required_info=InfoForAstrologyEntity(
+                            **status_obj.required_info
+                        ),
+                        result=status_obj.result,
+                        result_voice_path=status_obj.result_voice_path,
+                        is_played=status_obj.is_played,
+                    )
+                    status_entities.append(status_entity)
+                    livechat_messages.append(
+                        LiveChatMessageEntity(**livechat_obj.message)
+                    )
 
-        return status_entities, livechat_messages
+                return status_entities, livechat_messages
+            except Exception as e:
+                logger.exception(f"Failed to get all prepared status and message: {e}")
+                raise e
 
     def get_prepared_target_with_no_result(
         self, limit: int
@@ -209,18 +233,23 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             .order_by(YoutubeLivechatMessageOrm.created_at)
             .limit(limit)
         )
-        orm_objects = self.session.execute(stmt).scalars().all()
-        return [
-            WesternAstrologyStatusEntity(
-                message_id=obj.message_id,
-                is_target=obj.is_target,
-                required_info=InfoForAstrologyEntity(**obj.required_info),
-                result=obj.result,
-                result_voice_path=obj.result_voice_path,
-                is_played=obj.is_played,
-            )
-            for obj in orm_objects
-        ]
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                return [
+                    WesternAstrologyStatusEntity(
+                        message_id=obj.message_id,
+                        is_target=obj.is_target,
+                        required_info=InfoForAstrologyEntity(**obj.required_info),
+                        result=obj.result,
+                        result_voice_path=obj.result_voice_path,
+                        is_played=obj.is_played,
+                    )
+                    for obj in orm_objects
+                ]
+            except Exception as e:
+                logger.exception(f"Failed to get prepared target with no result: {e}")
+                raise e
 
     def get_no_voice_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
         stmt = (
@@ -240,18 +269,23 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             .order_by(YoutubeLivechatMessageOrm.created_at)
             .limit(limit)
         )
-        orm_objects = self.session.execute(stmt).scalars().all()
-        return [
-            WesternAstrologyStatusEntity(
-                message_id=obj.message_id,
-                is_target=obj.is_target,
-                required_info=InfoForAstrologyEntity(**obj.required_info),
-                result=obj.result,
-                result_voice_path=obj.result_voice_path,
-                is_played=obj.is_played,
-            )
-            for obj in orm_objects
-        ]
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                return [
+                    WesternAstrologyStatusEntity(
+                        message_id=obj.message_id,
+                        is_target=obj.is_target,
+                        required_info=InfoForAstrologyEntity(**obj.required_info),
+                        result=obj.result,
+                        result_voice_path=obj.result_voice_path,
+                        is_played=obj.is_played,
+                    )
+                    for obj in orm_objects
+                ]
+            except Exception as e:
+                logger.exception(f"Failed to get no voice target: {e}")
+                raise e
 
     def get_all_with_voice(self) -> list[WesternAstrologyStatusEntity]:
         stmt = (
@@ -270,18 +304,23 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             )
             .order_by(YoutubeLivechatMessageOrm.created_at)
         )
-        orm_objects = self.session.execute(stmt).scalars().all()
-        return [
-            WesternAstrologyStatusEntity(
-                message_id=obj.message_id,
-                is_target=obj.is_target,
-                required_info=InfoForAstrologyEntity(**obj.required_info),
-                result=obj.result,
-                result_voice_path=obj.result_voice_path,
-                is_played=obj.is_played,
-            )
-            for obj in orm_objects
-        ]
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                return [
+                    WesternAstrologyStatusEntity(
+                        message_id=obj.message_id,
+                        is_target=obj.is_target,
+                        required_info=InfoForAstrologyEntity(**obj.required_info),
+                        result=obj.result,
+                        result_voice_path=obj.result_voice_path,
+                        is_played=obj.is_played,
+                    )
+                    for obj in orm_objects
+                ]
+            except Exception as e:
+                logger.exception(f"Failed to get all with voice: {e}")
+                raise e
 
     def add_initial(self, chat_ids: list[str], is_target_list: list[bool]) -> None:
         """
@@ -310,5 +349,11 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 index_elements=[WesternAstrologyStatusOrm.message_id]
             )
         )
-        self.session.execute(stmt)
-        self.session.commit()
+        with SessionLocal() as session:
+            try:
+                session.execute(stmt)
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.exception(f"Failed to add initial: {e}")
+                raise e
