@@ -1,8 +1,13 @@
 import re
 from datetime import datetime
+from logging import getLogger
 
-from sqlalchemy import TIMESTAMP, func
+from sqlalchemy import TIMESTAMP, create_engine, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+
+from app.core.const import PG_URL
+
+logger = getLogger(__name__)
 
 
 # ヘルパー関数: CamelCase を snake_case に変換する
@@ -28,3 +33,18 @@ class TableNameMixin:
     def __tablename__(cls) -> str:
         # 例: "YoutubeLivechatMessage" -> "youtube_livechat_messages"
         return camel_to_snake(cls.__name__).replace("_orm", "") + "s"
+
+
+def initialize_db():
+    from app.infrastructure import (
+        tables,
+    )  # テーブル定義をここで読み込まないとalembicがテーブルを作成できない
+
+    try:
+        logger.info(f"Strat initializing DB")
+        engine = create_engine(PG_URL, echo=True)
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine, checkfirst=False)
+        logger.info(f"Successfully initialized DB")
+    except Exception as e:
+        logger.exception(f"Failed to initialize DB: {e}")
