@@ -368,7 +368,7 @@ with gr.Blocks(css=custom_css) as demo:
         btn_voice_stop = gr.Button("音声生成 STOP", elem_classes=["custom-stop-btn"])
 
     btn = gr.Button(
-        "データベースを初期化 (全てのバックグラウンド処理が完全に停止してから実行してください)"
+        "データベースを初期化 (全てのデータが消去されます)"
     )
     btn.click(
         fn=initialize_db,
