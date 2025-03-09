@@ -1,11 +1,10 @@
 import datetime
+
 from pydantic import BaseModel
 
 from app.domain.westernastrology import WesternAstrologyStatusEntity
 from app.domain.youtube.live import LiveChatMessageEntity
-from app.interfaces.gradio_app.constract_html import (
-    h2_tag,
-)
+from app.interfaces.gradio_app.constract_html import h2_tag
 
 
 class AstrologyData(BaseModel):

@@ -4,8 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import URL
 
 from app import config
