@@ -500,7 +500,7 @@ with gr.Blocks(css=custom_css) as demo:
         voice_status = gr.HTML(div_center_bold_text("未開始"))
         btn_voice_stop = gr.Button("音声生成 STOP", elem_classes=["custom-stop-btn"])
 
-    btn = gr.Button("データベースを初期化")
+    btn = gr.Button("データベースを初期化 (全てのバックグラウンド処理が完全に停止してから実行してください)")
     btn.click(
         fn=initialize_db,
     )
