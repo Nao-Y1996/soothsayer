@@ -20,6 +20,7 @@ from app.core.const import GRAFANA_URL, PG_URL
 from app.domain.repositories import WesternAstrologyResultRepository
 from app.domain.westernastrology import WesternAstrologyStatusEntity
 from app.domain.youtube.live import LiveChatMessageEntity
+from app.infrastructure.db_common import initialize_db as init_db
 from app.infrastructure.repositoriesImpl import WesternAstrologyResultRepositoryImpl
 from app.interfaces.gradio_app.constract_html import (
     div_center_bold_text,
@@ -64,6 +65,14 @@ class LatestGlobalStateView(BaseModel):
     astrology_html: str
     current_index: int
     play_button_name: str
+
+
+def initialize_db():
+    try:
+        init_db()
+        gr.Info("データベースを初期化しました.", duration=3)
+    except Exception as e:
+        raise gr.Error(f"データベースの初期化に失敗しました. {e}", duration=3)
 
 
 def get_latest_data() -> list[AstrologyData]:
@@ -490,6 +499,11 @@ with gr.Blocks(css=custom_css) as demo:
         btn_voice_start = gr.Button("音声生成 START", elem_classes=["custom-start-btn"])
         voice_status = gr.HTML(div_center_bold_text("未開始"))
         btn_voice_stop = gr.Button("音声生成 STOP", elem_classes=["custom-stop-btn"])
+
+    btn = gr.Button("データベースを初期化")
+    btn.click(
+        fn=initialize_db,
+    )
 
     # 各ボタンのクリック時に対応する関数を呼び出す
     btn_livechat_start.click(
