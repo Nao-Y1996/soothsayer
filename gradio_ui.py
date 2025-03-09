@@ -62,7 +62,7 @@ class LatestGlobalStateView(BaseModel):
     all_data: list[AstrologyData]
     info_html: str
     chat_html: str
-    astrology_html: str
+    astrology_result_text: str
     current_index: int
     play_button_name: str
 
@@ -130,13 +130,6 @@ def get_user_name_and_comment_html(user_name: str, comment: str):
 """
 
 
-def get_astrology_html(data: AstrologyData):
-    """
-    AstrologyData の占星術結果を HTML に整形して返す。
-    """
-    return f"{data.status.result}"
-
-
 def unpack_latest_state_view(func):
     @wraps(func)
     def wrapper(*args, **kwargs) -> tuple[list[AstrologyData], str, str, str, int, str]:
@@ -145,7 +138,7 @@ def unpack_latest_state_view(func):
             global_view.all_data,
             global_view.info_html,
             global_view.chat_html,
-            global_view.astrology_html,
+            global_view.astrology_result_text,
             global_view.current_index,
             global_view.play_button_name,
         )
@@ -166,7 +159,7 @@ def update_data(current_index) -> LatestGlobalStateView:
             all_data=data_list,
             info_html=get_info_html(current_index, data_list),
             chat_html="",
-            astrology_html="",
+            astrology_result_text="",
             current_index=current_index,
             play_button_name=get_play_button_name(None),
         )
@@ -177,7 +170,7 @@ def update_data(current_index) -> LatestGlobalStateView:
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_html=get_astrology_html(current_data),
+        astrology_result_text=current_data.status.result,
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -200,7 +193,7 @@ def prev_data(
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_html=get_astrology_html(current_data),
+        astrology_result_text=current_data.status.result,
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -223,7 +216,7 @@ def next_data(
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_html=get_astrology_html(current_data),
+        astrology_result_text=current_data.status.result,
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -261,7 +254,7 @@ def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_html=get_astrology_html(current_data),
+        astrology_result_text=current_data.status.result,
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -386,7 +379,7 @@ with gr.Blocks(css=custom_css) as demo:
                 obs_show_btn = gr.Button("表示", elem_classes=["obs-show-btn"])
 
     gr.HTML(value=h2_tag("占い結果"))
-    astrology_html_component = gr.Markdown(
+    astrology_md_component = gr.Markdown(
         value="", elem_classes=["custom-astrology-html"]
     )
 
@@ -423,7 +416,7 @@ with gr.Blocks(css=custom_css) as demo:
                 all_data,
                 info_html_component,
                 chat_html_component,
-                astrology_html_component,
+                astrology_md_component,
                 state_index,
                 btn_play,
             ],
@@ -437,7 +430,7 @@ with gr.Blocks(css=custom_css) as demo:
             all_data,
             info_html_component,
             chat_html_component,
-            astrology_html_component,
+            astrology_md_component,
             state_index,
             btn_play,
         ],
@@ -451,7 +444,7 @@ with gr.Blocks(css=custom_css) as demo:
             all_data,
             info_html_component,
             chat_html_component,
-            astrology_html_component,
+            astrology_md_component,
             state_index,
             btn_play,
         ],
@@ -465,7 +458,7 @@ with gr.Blocks(css=custom_css) as demo:
             all_data,
             info_html_component,
             chat_html_component,
-            astrology_html_component,
+            astrology_md_component,
             state_index,
             btn_play,
         ],
