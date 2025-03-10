@@ -98,44 +98,49 @@ def generate_astrology_result(
 
     # 占い結果を生成
     logger.info(f"Start generating astrology result list. message_ids: {message_ids}")
+    success_count = 0
     for astrology_status in target_astrology_status_list:
         required_info: InfoForAstrologyEntity = astrology_status.required_info
 
         logger.info(
             f"start generating astrology result: (message_id={astrology_status.message_id})"
         )
-        if required_info.satisfied_all():
-            try:
-                # LLMを使って占星術結果を取得
-                prompt = create_prompt_for_astrology(
-                    name=required_info.name,
-                    birthday=required_info.birthday,
-                    birth_time=required_info.birth_time,
-                    birthplace=required_info.birthplace,
-                    worries=required_info.worries,
-                )
-                output: Output = get_output(
-                    prompt=prompt, temperature=0.9, top_k=40, max_output_tokens=1000
-                )
-            except Exception as e:
-                logger.exception(
-                    f"Failed to generate astrology result. (message_id={astrology_status.message_id})"
-                )
-                # FIXME: 失敗した対象をそのままにすると、次以降の占い結果生成でも失敗し続ける可能性がある
-                continue
+        if not required_info.satisfied_all():
+            logger.info(
+                f"Failed to generate astrology result. Required information is not satisfied:"
+                f" (message_id={astrology_status.message_id})"
+            )
+            continue
+
+        try:
+            # LLMを使って占星術結果を取得
+            prompt = create_prompt_for_astrology(
+                name=required_info.name,
+                birthday=required_info.birthday,
+                birth_time=required_info.birth_time,
+                birthplace=required_info.birthplace,
+                worries=required_info.worries,
+            )
+            output: Output = get_output(
+                prompt=prompt, temperature=0.9, top_k=40, max_output_tokens=1000
+            )
             astrology_status.result = output.text
             logger.info(
                 f"Succeeded to generate astrology result: (message_id={astrology_status.message_id})"
             )
+            success_count += 1
+        except Exception as e:
+            logger.exception(
+                f"Failed to generate astrology result. (message_id={astrology_status.message_id}) {e}"
+            )
+            astrology_status.is_target = False
+        finally:
             # 占い結果を保存
             astrology_repo.save([astrology_status])
-        else:
-            logger.info(
-                f"Failed to generate astrology result. Required information is not satisfied: (message_id={astrology_status.message_id})"
-            )
 
     logger.info(
-        f"Finished generating astrology result list. Generated {len(target_astrology_status_list)} astrology results. (message_ids: {message_ids})"
+        f"Finished processing astrology result list. (Generated {success_count} / {len(target_astrology_status_list)})."
+        f"(message_ids: {message_ids})"
     )
 
 
