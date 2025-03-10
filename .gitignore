@@ -5,6 +5,9 @@ app/output/**
 app/interfaces/obs/texts/username.txt
 app/interfaces/obs/texts/comment.txt
 
+app/application/prompts/*.md
+!app/application/prompts/*.sample.md
+
 pgdata
 grafana
 

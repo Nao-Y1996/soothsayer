@@ -51,7 +51,7 @@ def prepare_for_astrology(
     )
 
     logger.info(
-        "Start preparing for astrology. message_ids: {target_astrology_status_message_ids}"
+        f"Start preparing for astrology. message_ids: {target_astrology_status_message_ids}"
     )
     # メッセージから占星術に必要な情報を抽出する
     for astrology_status in target_astrology_status_list:
