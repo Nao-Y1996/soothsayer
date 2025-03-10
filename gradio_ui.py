@@ -8,11 +8,14 @@ from logging import getLogger
 import gradio as gr
 
 from app.application.audio import play_audio_file
+from app.application.generate_result import result_thread_task
+from app.application.generate_audio import voice_thread_task
+from app.application.store_livechat import livechat_thread_task
 from app.config import (
     OBS_SCENE_NAME,
     OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT,
 )
-from app.core.const import GRAFANA_URL, PG_URL
+from app.core.const import GRAFANA_URL
 from app.domain.repositories import WesternAstrologyResultRepository
 from app.infrastructure.db_common import initialize_db as init_db
 from app.infrastructure.repositoriesImpl import WesternAstrologyResultRepositoryImpl
@@ -21,14 +24,7 @@ from app.interfaces.gradio_app.constract_html import (
     h1_tag,
     h2_tag,
 )
-from app.application.thread_manager import (
-    start_livechat,
-    start_result,
-    start_voice_generate,
-    stop_livechat,
-    stop_result,
-    stop_voice_generate,
-)
+
 from app.interfaces.obs.utils import (
     get_comment,
     get_scene_item_id_by_name,
@@ -376,37 +372,39 @@ with gr.Blocks(css=custom_css) as demo:
 
     # 各ボタンのクリック時に対応する関数を呼び出す
     btn_livechat_start.click(
-        fn=start_livechat, inputs=[video_id_input], outputs=livechat_status
+        fn=livechat_thread_task.set_live_chat_id, inputs=[video_id_input]
+    ).then(
+        fn=livechat_thread_task.start, outputs=livechat_status
     ).then(
         fn=div_center_bold_text,
         inputs=[livechat_status],
         outputs=livechat_status,
     )
-    btn_livechat_stop.click(fn=stop_livechat, inputs=[], outputs=livechat_status).then(
+    btn_livechat_stop.click(fn=livechat_thread_task.stop, inputs=[], outputs=livechat_status).then(
         fn=div_center_bold_text,
         inputs=[livechat_status],
         outputs=livechat_status,
     )
 
-    btn_result_start.click(fn=start_result, inputs=[], outputs=result_status).then(
+    btn_result_start.click(fn=result_thread_task.start, inputs=[], outputs=result_status).then(
         fn=div_center_bold_text,
         inputs=[result_status],
         outputs=result_status,
     )
-    btn_result_stop.click(fn=stop_result, inputs=[], outputs=result_status).then(
+    btn_result_stop.click(fn=result_thread_task.stop, inputs=[], outputs=result_status).then(
         fn=div_center_bold_text,
         inputs=[result_status],
         outputs=result_status,
     )
 
     btn_voice_start.click(
-        fn=start_voice_generate, inputs=[], outputs=voice_status
+        fn=voice_thread_task.start, inputs=[], outputs=voice_status
     ).then(
         fn=div_center_bold_text,
         inputs=[voice_status],
         outputs=voice_status,
     )
-    btn_voice_stop.click(fn=stop_voice_generate, inputs=[], outputs=voice_status).then(
+    btn_voice_stop.click(fn=voice_thread_task.stop, inputs=[], outputs=voice_status).then(
         fn=div_center_bold_text,
         inputs=[voice_status],
         outputs=voice_status,

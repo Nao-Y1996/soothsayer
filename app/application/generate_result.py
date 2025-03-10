@@ -1,6 +1,8 @@
+import time
 from logging import getLogger
 
 from app.application.audio import txt_to_audiofile
+from app.application.thread_manager import ThreadTask
 from app.application.westernastrology import (
     create_prompt_for_astrology,
     extract_info_for_astrology,
@@ -17,7 +19,10 @@ from app.domain.westernastrology import (
 from app.domain.youtube.live import LiveChatMessageEntity
 from app.infrastructure.external.llm.dtos import Output
 from app.infrastructure.external.llm.llm_google import get_output
-from app.infrastructure.repositoriesImpl import WesternAstrologyResultRepositoryImpl
+from app.infrastructure.repositoriesImpl import (
+    WesternAstrologyResultRepositoryImpl,
+    YoutubeLiveChatMessageRepositoryImpl,
+)
 
 logger = getLogger(__name__)
 
@@ -177,3 +182,26 @@ def result_to_voice(astrology_repo: WesternAstrologyResultRepository) -> None:
             logger.exception(
                 f"No result to generate voice: (message_id={astrology_status.message_id})"
             )
+
+
+class GenerateResultTask(ThreadTask):
+
+    def run(self):
+        """占星術結果生成の無限ループ処理"""
+        livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
+        astrology_repo = WesternAstrologyResultRepositoryImpl()
+        logger.info("Start Thread for generating result.")
+        while not self.stop_event.is_set():
+            try:
+                # 占いの準備
+                prepare_for_astrology(astrology_repo, livechat_repo)
+                # 占い結果の生成
+                generate_astrology_result(astrology_repo)
+                # 停止フラグのチェック間隔として sleep
+                time.sleep(1)
+            except Exception as e:
+                logger.exception("Failed to generate result: " + str(e))
+        logger.info("Stopped Thread for generating result.")
+
+
+result_thread_task = GenerateResultTask("result")

@@ -6,16 +6,17 @@ from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
 from pydantic import ValidationError
 
+from app.core.const import GEMINI_API_KEY
 from app.domain.youtube.live import LiveChatMessageEntity
 
 logger = getLogger(__name__)
 
 
-def get_youtube_service(api_key: str) -> Any:
+def get_youtube_service() -> Any:
     """
     YouTube Data APIクライアントを初期化して返却します。
     """
-    return build("youtube", "v3", developerKey=api_key)
+    return build("youtube", "v3", developerKey=GEMINI_API_KEY)
 
 
 def get_live_chat_id(youtube: Any, video_id: str) -> Optional[str]:
