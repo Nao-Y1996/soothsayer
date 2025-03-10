@@ -70,7 +70,7 @@ class LivechatTask(ThreadTask):
         livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
         astrology_repo = WesternAstrologyResultRepositoryImpl()
         logger.info(
-            "Start thread for saving livechat messages. live_chat_id: {self.live_chat_id}"
+            f"Start thread for saving livechat messages. live_chat_id: {self.live_chat_id}"
         )
         youtube = get_youtube_service()
 
