@@ -6,6 +6,7 @@ from app.application.thread_manager import ThreadTask
 from app.core.const import AUDIO_DIR
 from app.domain.repositories import WesternAstrologyResultRepository
 from app.domain.westernastrology import WesternAstrologyStatusEntity
+from app.infrastructure.external.stylebertvit2.voice import is_alive
 from app.infrastructure.repositoriesImpl import WesternAstrologyResultRepositoryImpl
 
 logger = getLogger(__name__)
@@ -57,6 +58,12 @@ def result_to_voice(astrology_repo: WesternAstrologyResultRepository) -> None:
 
 
 class VoiceTask(ThreadTask):
+
+    def start(self) -> str:
+        if not is_alive():
+            logger.warning("Voice model is not alive.")
+            return "音声モデルの起動を確認してください"
+        return super().start()
 
     def run(self):
         """占星術結果を音声変換する無限ループ処理"""

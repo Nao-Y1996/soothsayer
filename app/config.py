@@ -16,6 +16,12 @@ grafana_url = "http://localhost:3000/dashboards"
 # TODO testモードで実行しても実際のyoutubeライブ配信のビデオIDが必要なので、ビデオIDもダミーする
 # TODO モードの切り替えを画面から行えるようにする
 
+# ===== style-bert-vit2 の連携 ======
+VOICE_HOST = "localhost"
+VOICE_PORT = 5050
+VOICE_MODEL_NAME = "amitaro"
+# ===================================
+
 
 # ============= OBS連携 =============
 OBS_HOST = "localhost"
