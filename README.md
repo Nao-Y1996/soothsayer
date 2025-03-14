@@ -8,7 +8,8 @@
 ## 実行環境
 
 - Python: 3.11
-- Docker コンテナ
+- poetry: 1.8系
+- Docker:
   - DB: PostgreSQL
   - Grafana
 
@@ -22,16 +23,24 @@
     ```
 
 2. 依存関係をインストールする
+    
+    poetry2系を使用している場合は `poetry self add poetry-plugin-shell` を実行して、`poetry shell`を利用できるようにしてください
   
     ```bash
     poetry shell
     poetry install --no-root
     ```
+3. 必要なファイルの作成
 
-3. 環境変数のセット
+    ```bash
+   python setup_init.py
+    ```
+4. 環境変数のセット
 
-    .env.sampleをコピーして.envを作成して、全ての環境変数をセットする。
-  
+    以下の2つのAPIを利用するためのAPIキーを`.env` にAPIキーを設定してください
+    - YouTube Data API v3
+    - Generative Language API
+    
     以下の環境変数はそのままでも良い
 
     ```bash
@@ -42,19 +51,21 @@
     POSTGRES_PORT=5432
     ```
 
-4. データベースを立ち上げる
+5. データベースを立ち上げる
+    
+    Dockerを起動して以下のコマンドを実行する 
 
     ```bash
     docker compose up -d 
     ```
 
-5. テーブルの初期化
+6. テーブルの初期化
 
     ```bash
     alembic upgrade head
     ```
 
-6. アプリケーションを起動する
+7. アプリケーションを起動する
   
     初回は少し時間がかかる
   
@@ -62,47 +73,11 @@
     python gradio_ui.py
     ```
 
-7. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
+8. ブラウザで`http://localhost:7860/?__theme=light` にアクセスし、画面が表示されれば環境構築は成功です
 
+## 使用方法
 
-## 起動/終了方法（初回以降）
-
-### 起動
-
-1. DBとGrafanaを立ち上げる
-
-  ```bash
-  docker-compose up -d
-  ```
-
-2. アプリケーションを起動する
-
-  ```bash
-  python gradio_ui.py
-  ```
-
-3. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
-
-### 終了
-
-1. アプリを起動したターミナルで `Ctrl + C` を押して終了する
-
-2. DBとGrafanaを終了する
-
-  ```bash
-  docker-compose down
-  ```
-
-## 設定
-
-設定は `app/config.py` に記載されており、 以下の部分で "test" か "prod" を指定することで、動作のテスト用か配信用か切り替えが可能。
-
-- test: テスト用の設定
-- prod: 配信用の設定
-
-```python
-mode_type: Literal["test", "prod"] = "test"  # test or prod
-```
+[docs/app_usage.md](docs/app_usage.md)を参照してください
 
 ## テーブルの一覧
 
