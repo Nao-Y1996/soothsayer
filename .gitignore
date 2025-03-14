@@ -8,6 +8,9 @@ app/interfaces/obs/texts/comment.txt
 app/application/prompts/*.md
 !app/application/prompts/*.sample.md
 
+app/config.py
+app/config_backup_**
+
 pgdata
 grafana
 
