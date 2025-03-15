@@ -411,4 +411,13 @@ with gr.Blocks(css=custom_css) as demo:
     )
 
 if __name__ == "__main__":
+    # 音声の出力先デバイスが利用可能か確認
+    from app.application.audio import is_available_device, get_device_info
+    from app.config import AUDIO_DEVICE_NAME
+    if not is_available_device(AUDIO_DEVICE_NAME):
+        info = get_device_info()
+        error_msg = (f"Configured Device {AUDIO_DEVICE_NAME} is not available.\n"
+                     f"Please set AUDIO_DEVICE_NAME in config.py from following devices:\n\n{info}")
+        raise ValueError(error_msg)
+
     demo.launch(server_name="0.0.0.0", server_port=7860)  # TODO IPやポートは設定に書く

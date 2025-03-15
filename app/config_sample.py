@@ -22,6 +22,9 @@ VOICE_PORT = 5050
 VOICE_MODEL_NAME = "amitaro"
 # ===================================
 
+# ======= 音声出力先の設定 ========
+AUDIO_DEVICE_NAME = ""  # ex: VB-Cable
+# ================================
 
 # ============= OBS連携 =============
 OBS_HOST = "localhost"
