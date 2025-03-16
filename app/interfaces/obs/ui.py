@@ -2,14 +2,14 @@ import datetime
 
 from pydantic import BaseModel
 
-from app.domain.westernastrology import WesternAstrologyStatusEntity
+from app.domain.westernastrology import WesternAstrologyStateEntity
 from app.domain.youtube.live import LiveChatMessageEntity
 from app.interfaces.gradio_app.constract_html import h2_tag
 
 
 class AstrologyData(BaseModel):
     chat_message: LiveChatMessageEntity
-    status: WesternAstrologyStatusEntity
+    state: WesternAstrologyStateEntity
 
 
 class LatestGlobalStateView(BaseModel):
@@ -69,10 +69,10 @@ def get_play_button_name(data: AstrologyData | None):
     """ """
     if not data:
         return "音声なし"
-    status = data.status
-    if status.result_voice_path and not status.is_played:
+    state = data.state
+    if state.result_voice_path and not state.is_played:
         btn_name = "再生(未)"
-    elif status.result_voice_path and status.is_played:
+    elif state.result_voice_path and state.is_played:
         btn_name = "再生(済)"
     else:
         btn_name = "音声なし"

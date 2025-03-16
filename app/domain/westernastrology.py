@@ -94,7 +94,7 @@ class InfoForAstrologyEntity(BaseModel):
         return f"{self.name} ({self.birthday} {self.birth_time} {self.birthplace}), worries: {self.worries}"
 
 
-class WesternAstrologyStatusEntity(BaseModel):
+class WesternAstrologyStateEntity(BaseModel):
     """
     西洋占星術の結果を表すエンティティ
     """
@@ -103,7 +103,7 @@ class WesternAstrologyStatusEntity(BaseModel):
         ..., description="message id"
     )  # TODO: youtubeだけでなく他の媒体におけるメッセージオブジェクトのIDも扱う
     is_target: bool = Field(
-        ..., description="whether this status is target for astrology"
+        ..., description="whether this state is target for astrology"
     )
     required_info: InfoForAstrologyEntity | None = Field(
         None, description="The base information to execute astrology"

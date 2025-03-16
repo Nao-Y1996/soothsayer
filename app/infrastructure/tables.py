@@ -14,6 +14,7 @@ class YoutubeLivechatMessageOrm(Base, TimestampMixin, TableNameMixin):
     message: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
 
+# TODO WesternAstrologyStateOrm にrename(table名も変更されるので注意)
 class WesternAstrologyStatusOrm(Base, TimestampMixin, TableNameMixin):
     # 主キー: UUID (insert時に決める)
     # id: Mapped[str] = mapped_column(

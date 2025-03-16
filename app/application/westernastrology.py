@@ -20,6 +20,7 @@ logger = getLogger(__name__)
 setup_dir = Path(__file__).parent / "ephemeris"
 prompts_dir = Path(__file__).parent / "prompts"
 
+
 def get_coordinates(place: str) -> LocationEntity:
     """
     Get static coordinates for a place.

@@ -14,7 +14,7 @@ from app.infrastructure.external.youtube.helper import (
     get_youtube_service,
 )
 from app.infrastructure.repositoriesImpl import (
-    WesternAstrologyResultRepositoryImpl,
+    WesternAstrologyStateRepositoryImpl,
     YoutubeLiveChatMessageRepositoryImpl,
 )
 
@@ -68,7 +68,7 @@ class LivechatTask(ThreadTask):
         """
 
         livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
-        astrology_repo = WesternAstrologyResultRepositoryImpl()
+        astrology_repo = WesternAstrologyStateRepositoryImpl()
         logger.info(
             f"Start thread for saving livechat messages. live_chat_id: {self.live_chat_id}"
         )

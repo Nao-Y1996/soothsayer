@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 
-from app.domain.westernastrology import WesternAstrologyStatusEntity
+from app.domain.westernastrology import WesternAstrologyStateEntity
 from app.domain.youtube.live import LiveChatMessageEntity
 
 
@@ -43,14 +43,14 @@ class YoutubeLiveChatMessageRepository(ABC):
         )
 
 
-class WesternAstrologyResultRepository(ABC):
+class WesternAstrologyStateRepository(ABC):
     """
     西洋占星術結果の永続化を扱うリポジトリの抽象クラス。
     DDDにおけるRepositoryインターフェースを想定。
     """
 
     @abstractmethod
-    def save(self, results: list[WesternAstrologyStatusEntity]) -> None:
+    def save(self, states: list[WesternAstrologyStateEntity]) -> None:
         """
         占い結果をDBに保存または更新する。
         """
@@ -59,7 +59,7 @@ class WesternAstrologyResultRepository(ABC):
         )
 
     @abstractmethod
-    def get_not_prepared_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
+    def get_not_prepared_target(self, limit: int) -> list[WesternAstrologyStateEntity]:
         """
         占い対象で、占いに必要な情報がまだないものを取得する
         """
@@ -68,9 +68,9 @@ class WesternAstrologyResultRepository(ABC):
         )
 
     @abstractmethod
-    def get_all_prepared_status_and_message(
+    def get_all_prepared_state_and_message(
         self,
-    ) -> tuple[list[WesternAstrologyStatusEntity], list[LiveChatMessageEntity]]:
+    ) -> tuple[list[WesternAstrologyStateEntity], list[LiveChatMessageEntity]]:
         """
         占い対象で、占いに必要な情報が揃っているものを全て取得する
         """
@@ -81,7 +81,7 @@ class WesternAstrologyResultRepository(ABC):
     @abstractmethod
     def get_prepared_target_with_no_result(
         self, limit: int
-    ) -> list[WesternAstrologyStatusEntity]:
+    ) -> list[WesternAstrologyStateEntity]:
         """
         占い対象で、占いに必要な情報が揃っていて、占い結果がまだないものを取得する
         """
@@ -90,7 +90,7 @@ class WesternAstrologyResultRepository(ABC):
         )
 
     @abstractmethod
-    def get_no_voice_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
+    def get_no_voice_target(self, limit: int) -> list[WesternAstrologyStateEntity]:
         """
         占い結果があり、音声ファイルがまだないものを取得する
         """
@@ -99,7 +99,7 @@ class WesternAstrologyResultRepository(ABC):
         )
 
     @abstractmethod
-    def get_all_with_voice(self) -> list[WesternAstrologyStatusEntity]:
+    def get_all_with_voice(self) -> list[WesternAstrologyStateEntity]:
         """
         音声ファイルがあるものを全て取得する
         """

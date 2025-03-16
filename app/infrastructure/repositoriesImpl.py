@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import and_, select
 
 from app.domain.repositories import (
-    WesternAstrologyResultRepository,
+    WesternAstrologyStateRepository,
     YoutubeLiveChatMessageRepository,
 )
 from app.domain.westernastrology import (
     InfoForAstrologyEntity,
-    WesternAstrologyStatusEntity,
+    WesternAstrologyStateEntity,
 )
 from app.domain.youtube.live import LiveChatMessageEntity
 from app.infrastructure.db_common import SessionLocal
@@ -90,25 +90,25 @@ class YoutubeLiveChatMessageRepositoryImpl(YoutubeLiveChatMessageRepository):
                 raise e
 
 
-class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
+class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
 
-    def save(self, status_list: list[WesternAstrologyStatusEntity]) -> None:
+    def save(self, state_list: list[WesternAstrologyStateEntity]) -> None:
         """
         占い結果をDBに保存または更新する。
         """
         values = [
             {
-                "message_id": str(status.message_id),
-                "is_target": status.is_target,
-                "required_info": status.required_info.model_dump(),
-                "result": status.result,
-                "result_voice_path": status.result_voice_path,
-                "is_played": status.is_played,
+                "message_id": str(state.message_id),
+                "is_target": state.is_target,
+                "required_info": state.required_info.model_dump(),
+                "result": state.result,
+                "result_voice_path": state.result_voice_path,
+                "is_played": state.is_played,
             }
-            for status in status_list
+            for state in state_list
         ]
         if not values:
-            # valuesが[]の時にはWesternAstrologyStatusOrmのフィールドが全て空のデータをinsertしようとして
+            # valuesが[]の時にはWesternAstrologyStateOrmのフィールドが全て空のデータをinsertしようとして
             # message_idのnot null制約(primary key)に引っかかるため、ここでreturnする
             return
         stmt = pg_insert(WesternAstrologyStatusOrm).values(values)
@@ -129,10 +129,10 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 session.commit()
             except Exception as e:
                 session.rollback()
-                logger.exception(f"Failed to save status: {e}")
+                logger.exception(f"Failed to save state: {e}")
                 raise e
 
-    def get_not_prepared_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
+    def get_not_prepared_target(self, limit: int) -> list[WesternAstrologyStateEntity]:
         stmt = (
             select(WesternAstrologyStatusOrm)
             .where(
@@ -153,7 +153,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             try:
                 orm_objects = session.execute(stmt).scalars().all()
                 return [
-                    WesternAstrologyStatusEntity(
+                    WesternAstrologyStateEntity(
                         message_id=obj.message_id,
                         is_target=obj.is_target,
                         required_info=None,
@@ -167,9 +167,9 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 logger.exception(f"Failed to get not prepared target: {e}")
                 raise e
 
-    def get_all_prepared_status_and_message(
+    def get_all_prepared_state_and_message(
         self,
-    ) -> tuple[list[WesternAstrologyStatusEntity], list[LiveChatMessageEntity]]:
+    ) -> tuple[list[WesternAstrologyStateEntity], list[LiveChatMessageEntity]]:
         stmt = (
             select(WesternAstrologyStatusOrm, YoutubeLivechatMessageOrm)
             .where(
@@ -187,36 +187,34 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
         with SessionLocal() as session:
             try:
                 # scalars().all()だと複数のオブジェクトのうち最初のオブジェクトしかが返ってこない
-                # このケースだと、WesternAstrologyStatusOrmしか取得できない
+                # このケースだと、WesternAstrologyStateOrmしか取得できない
                 orm_objects = session.execute(stmt).all()
                 # そのため、scalars()は使用せずにall()で全てのオブジェクトを取得する必要がある
-                status_entities: list[WesternAstrologyStatusEntity] = []
+                state_entities: list[WesternAstrologyStateEntity] = []
                 livechat_messages: list[LiveChatMessageEntity] = []
 
-                for status_obj, livechat_obj in orm_objects:
-                    status_entity = WesternAstrologyStatusEntity(
-                        message_id=status_obj.message_id,
-                        is_target=status_obj.is_target,
-                        required_info=InfoForAstrologyEntity(
-                            **status_obj.required_info
-                        ),
-                        result=status_obj.result,
-                        result_voice_path=status_obj.result_voice_path,
-                        is_played=status_obj.is_played,
+                for state_obj, livechat_obj in orm_objects:
+                    state_entity = WesternAstrologyStateEntity(
+                        message_id=state_obj.message_id,
+                        is_target=state_obj.is_target,
+                        required_info=InfoForAstrologyEntity(**state_obj.required_info),
+                        result=state_obj.result,
+                        result_voice_path=state_obj.result_voice_path,
+                        is_played=state_obj.is_played,
                     )
-                    status_entities.append(status_entity)
+                    state_entities.append(state_entity)
                     livechat_messages.append(
                         LiveChatMessageEntity(**livechat_obj.message)
                     )
 
-                return status_entities, livechat_messages
+                return state_entities, livechat_messages
             except Exception as e:
-                logger.exception(f"Failed to get all prepared status and message: {e}")
+                logger.exception(f"Failed to get all prepared state and message: {e}")
                 raise e
 
     def get_prepared_target_with_no_result(
         self, limit: int
-    ) -> list[WesternAstrologyStatusEntity]:
+    ) -> list[WesternAstrologyStateEntity]:
         stmt = (
             select(WesternAstrologyStatusOrm)
             .where(
@@ -237,7 +235,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             try:
                 orm_objects = session.execute(stmt).scalars().all()
                 return [
-                    WesternAstrologyStatusEntity(
+                    WesternAstrologyStateEntity(
                         message_id=obj.message_id,
                         is_target=obj.is_target,
                         required_info=InfoForAstrologyEntity(**obj.required_info),
@@ -251,7 +249,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 logger.exception(f"Failed to get prepared target with no result: {e}")
                 raise e
 
-    def get_no_voice_target(self, limit: int) -> list[WesternAstrologyStatusEntity]:
+    def get_no_voice_target(self, limit: int) -> list[WesternAstrologyStateEntity]:
         stmt = (
             select(WesternAstrologyStatusOrm)
             .where(
@@ -273,7 +271,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             try:
                 orm_objects = session.execute(stmt).scalars().all()
                 return [
-                    WesternAstrologyStatusEntity(
+                    WesternAstrologyStateEntity(
                         message_id=obj.message_id,
                         is_target=obj.is_target,
                         required_info=InfoForAstrologyEntity(**obj.required_info),
@@ -287,7 +285,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
                 logger.exception(f"Failed to get no voice target: {e}")
                 raise e
 
-    def get_all_with_voice(self) -> list[WesternAstrologyStatusEntity]:
+    def get_all_with_voice(self) -> list[WesternAstrologyStateEntity]:
         stmt = (
             select(WesternAstrologyStatusOrm)
             .where(
@@ -308,7 +306,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
             try:
                 orm_objects = session.execute(stmt).scalars().all()
                 return [
-                    WesternAstrologyStatusEntity(
+                    WesternAstrologyStateEntity(
                         message_id=obj.message_id,
                         is_target=obj.is_target,
                         required_info=InfoForAstrologyEntity(**obj.required_info),
@@ -340,7 +338,7 @@ class WesternAstrologyResultRepositoryImpl(WesternAstrologyResultRepository):
         ]
         if not values:
             return
-            # valuesが[]の時にはWesternAstrologyStatusOrmのフィールドが全て空のデータをinsertしようとして
+            # valuesが[]の時にはWesternAstrologyStateOrmのフィールドが全て空のデータをinsertしようとして
             # message_idのnot null制約(primary key)に引っかかるため、ここでreturnする
         stmt = (
             pg_insert(WesternAstrologyStatusOrm)
