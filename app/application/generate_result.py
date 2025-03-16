@@ -144,51 +144,6 @@ def generate_astrology_result(
     )
 
 
-def result_to_voice(astrology_repo: WesternAstrologyStateRepository) -> None:
-    """
-    占い結果を音声化し、DBに保存する
-    """
-    # まだ音声化されていない占星術ステータスを取得
-    target_astrology_state_list: list[WesternAstrologyStateEntity] = (
-        astrology_repo.get_no_voice_target(limit=1)
-    )  # TODO limitは設定で変えるようにする
-    if not target_astrology_state_list:
-        return
-
-    # 占い結果を音声化
-    logger.info("Start generating voice for astrology result list.")
-    for astrology_state in target_astrology_state_list:
-        result = astrology_state.result
-
-        logger.info(
-            f"Start generating voice for astrology result: (message_id={astrology_state.message_id})"
-        )
-        if result:
-            # 音声化
-            try:
-                audio_file_path = txt_to_audiofile(
-                    text=result,
-                    audiofile_path=AUDIO_DIR / f"{astrology_state.message_id}.wav",
-                )
-                astrology_state.result_voice_path = audio_file_path
-                logger.info(
-                    f"Succeeded to generate voice for astrology result: (message_id={astrology_state.message_id})"
-                )
-                # 音声化結果を保存
-                # 生成は1つ1つが時間がかかるので、1つの結果を生成したらすぐに保存する
-                astrology_repo.save([astrology_state])
-            except IOError as e:
-                logger.exception(
-                    f"Failed to generate voice for astrology result: (message_id={astrology_state.message_id})"
-                )
-                raise e
-        else:
-            # get_no_voice_targetで結果が空ではないものを取得しているので、ここに来ることはないはず
-            logger.exception(
-                f"No result to generate voice: (message_id={astrology_state.message_id})"
-            )
-
-
 class GenerateResultTask(ThreadTask):
 
     def run(self):
