@@ -109,7 +109,7 @@ def create_prompt_for_astrology(
 
     # 占い生成用のプロンプト
     prompt_path = prompts_dir / "western_astrology.md"
-    with prompt_path.open("r") as f:
+    with prompt_path.open("r", encoding="utf-8") as f:
         prompt_template = f.read()
     prompt = prompt_template.format(
         name=name,
