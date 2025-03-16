@@ -1,13 +1,11 @@
 import time
 from logging import getLogger
 
-from app.application.audio import txt_to_audiofile
 from app.application.thread_manager import ThreadTask
 from app.application.westernastrology import (
     create_prompt_for_astrology,
     extract_info_for_astrology,
 )
-from app.core.const import AUDIO_DIR
 from app.domain.repositories import (
     WesternAstrologyStateRepository,
     YoutubeLiveChatMessageRepository,

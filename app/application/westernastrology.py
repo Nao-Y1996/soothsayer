@@ -1,8 +1,6 @@
-import urllib.parse
 from logging import getLogger
 from pathlib import Path
 
-import httpx
 import swisseph as swe
 from flatlib import const
 from flatlib.chart import Chart
@@ -93,7 +91,7 @@ def create_prompt_for_astrology(
 
             planetary_positions[obj_id] = {
                 "sign": obj.sign,
-                "degree": round(obj.lon, 2),
+                "degree": round(obj.lon, 2),  # type: ignore
                 "house": house_num,
             }
     # 惑星配置のテキスト化
