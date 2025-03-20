@@ -48,6 +48,7 @@ def initialize_db():
     from app.infrastructure import (
         tables,
     )  # テーブル定義をここで読み込まないとalembicがテーブルを作成できない
+
     print(tables)
 
     try:

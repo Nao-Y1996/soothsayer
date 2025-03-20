@@ -106,3 +106,12 @@ class WesternAstrologyStateRepository(ABC):
         raise NotImplementedError(
             "get_all_with_voice method for WesternAstrologyResultRepository must be implemented."
         )
+
+    @abstractmethod
+    def get_waiting_audio_play_state(self) -> list[WesternAstrologyStateEntity]:
+        """
+        音声再生待ちの占い結果を取得する
+        """
+        raise NotImplementedError(
+            "get_waiting_audio_play_state method for WesternAstrologyResultRepository must be implemented."
+        )

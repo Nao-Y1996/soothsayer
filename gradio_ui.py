@@ -8,24 +8,34 @@ from logging import getLogger
 import gradio as gr
 
 from app.application.audio import play_audio_file
-from app.application.generate_result import GenerateResultTask
 from app.application.generate_audio import VoiceTask
+from app.application.generate_result import GenerateResultTask
+from app.application.obs_display_service import DisplayWaitingCountTreadTask
 from app.application.store_livechat import LivechatTask
 from app.config import (
     OBS_SCENE_NAME,
     OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT,
 )
 from app.core.const import GRAFANA_URL
-from app.application.stete_monitor import WesternAstrologyStateMonitor
 from app.infrastructure.db_common import initialize_db as init_db
-from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl, \
-    YoutubeLiveChatMessageRepositoryImpl
+from app.infrastructure.repositoriesImpl import (
+    WesternAstrologyStateRepositoryImpl,
+    YoutubeLiveChatMessageRepositoryImpl,
+)
 from app.interfaces.gradio_app.constract_html import (
     div_center_bold_text,
     h1_tag,
     h2_tag,
 )
-
+from app.interfaces.obs.ui import (
+    AstrologyData,
+    LatestGlobalStateView,
+    custom_css,
+    get_chat_html,
+    get_info_html,
+    get_play_button_name,
+    get_user_name_and_comment_html,
+)
 from app.interfaces.obs.utils import (
     get_comment,
     get_scene_item_id_by_name,
@@ -35,26 +45,31 @@ from app.interfaces.obs.utils import (
     update_user_name,
 )
 
-from app.interfaces.obs.ui import (
-    AstrologyData,
-    LatestGlobalStateView,
-    get_info_html,
-    get_user_name_and_comment_html,
-    get_chat_html,
-    get_play_button_name,
-    custom_css,
-)
-
 logging_config.configure_logging()
 logger = getLogger(__name__)
 
 # スレッドタスクの初期化
 voice_thread_task = VoiceTask("voice", WesternAstrologyStateRepositoryImpl())
-result_thread_task = GenerateResultTask("result", WesternAstrologyStateRepositoryImpl(), YoutubeLiveChatMessageRepositoryImpl())
-livechat_thread_task = LivechatTask("livechat", WesternAstrologyStateRepositoryImpl(), YoutubeLiveChatMessageRepositoryImpl())
+result_thread_task = GenerateResultTask(
+    "result",
+    WesternAstrologyStateRepositoryImpl(),
+    YoutubeLiveChatMessageRepositoryImpl(),
+)
+livechat_thread_task = LivechatTask(
+    "livechat",
+    WesternAstrologyStateRepositoryImpl(),
+    YoutubeLiveChatMessageRepositoryImpl(),
+)
+waiting_count_display_thread_task = DisplayWaitingCountTreadTask(
+    "waiting_count_display",
+    WesternAstrologyStateRepositoryImpl(),
+    display_format="占い待ち: {}人",
+    interval=5,
+)
 
 # リポジトリ
 western_astrology_repo = WesternAstrologyStateRepositoryImpl()
+
 
 def initialize_db():
     try:
@@ -367,41 +382,52 @@ with gr.Blocks(css=custom_css) as demo:
         btn_voice_start = gr.Button("音声生成 START", elem_classes=["custom-start-btn"])
         voice_status = gr.HTML(div_center_bold_text("未開始"))
         btn_voice_stop = gr.Button("音声生成 STOP", elem_classes=["custom-stop-btn"])
+    with gr.Row():
+        display_waiting_num_start = gr.Button(
+            "待ち人数表示 START", elem_classes=["custom-start-btn"]
+        )
+        display_waiting_num_status = gr.HTML(div_center_bold_text("未開始"))
+        display_waiting_num_stop = gr.Button(
+            "待ち人数表示 STOP", elem_classes=["custom-stop-btn"]
+        )
 
-    btn = gr.Button(
-        "データベースを初期化 (全てのデータが消去されます)"
-    )
+    btn = gr.Button("データベースを初期化 (全てのデータが消去されます)")
     btn.click(
         fn=initialize_db,
     )
 
     # 各ボタンのクリック時に対応する関数を呼び出す
+    # コメント取得
     btn_livechat_start.click(
         fn=livechat_thread_task.set_live_chat_id, inputs=[video_id_input]
-    ).then(
-        fn=livechat_thread_task.start, outputs=livechat_status
+    ).then(fn=livechat_thread_task.start, outputs=livechat_status).then(
+        fn=div_center_bold_text,
+        inputs=[livechat_status],
+        outputs=livechat_status,
+    )
+    btn_livechat_stop.click(
+        fn=livechat_thread_task.stop, inputs=[], outputs=livechat_status
     ).then(
         fn=div_center_bold_text,
         inputs=[livechat_status],
         outputs=livechat_status,
     )
-    btn_livechat_stop.click(fn=livechat_thread_task.stop, inputs=[], outputs=livechat_status).then(
-        fn=div_center_bold_text,
-        inputs=[livechat_status],
-        outputs=livechat_status,
-    )
-
-    btn_result_start.click(fn=result_thread_task.start, inputs=[], outputs=result_status).then(
+    # 占い結果生成
+    btn_result_start.click(
+        fn=result_thread_task.start, inputs=[], outputs=result_status
+    ).then(
         fn=div_center_bold_text,
         inputs=[result_status],
         outputs=result_status,
     )
-    btn_result_stop.click(fn=result_thread_task.stop, inputs=[], outputs=result_status).then(
+    btn_result_stop.click(
+        fn=result_thread_task.stop, inputs=[], outputs=result_status
+    ).then(
         fn=div_center_bold_text,
         inputs=[result_status],
         outputs=result_status,
     )
-
+    # 音声生成
     btn_voice_start.click(
         fn=voice_thread_task.start, inputs=[], outputs=voice_status
     ).then(
@@ -409,20 +435,40 @@ with gr.Blocks(css=custom_css) as demo:
         inputs=[voice_status],
         outputs=voice_status,
     )
-    btn_voice_stop.click(fn=voice_thread_task.stop, inputs=[], outputs=voice_status).then(
+    btn_voice_stop.click(
+        fn=voice_thread_task.stop, inputs=[], outputs=voice_status
+    ).then(
         fn=div_center_bold_text,
         inputs=[voice_status],
         outputs=voice_status,
     )
+    # 待ち人数表示
+    display_waiting_num_start.click(
+        fn=waiting_count_display_thread_task.start, outputs=display_waiting_num_status,
+    ).then(
+        fn=div_center_bold_text,
+        inputs=[display_waiting_num_status],
+        outputs=display_waiting_num_status,
+    )
+    display_waiting_num_stop.click(
+        fn=waiting_count_display_thread_task.stop, outputs=display_waiting_num_status,
+    ).then(
+        fn=div_center_bold_text,
+        inputs=[display_waiting_num_status],
+        outputs=display_waiting_num_status,
+    )
 
 if __name__ == "__main__":
     # 音声の出力先デバイスが利用可能か確認
-    from app.application.audio import is_available_device, get_device_info
+    from app.application.audio import get_device_info, is_available_device
     from app.config import AUDIO_DEVICE_NAME
+
     if not is_available_device(AUDIO_DEVICE_NAME):
         info = get_device_info()
-        error_msg = (f"Configured Device {AUDIO_DEVICE_NAME} is not available.\n"
-                     f"Please set AUDIO_DEVICE_NAME in config.py from following devices:\n\n{info}")
+        error_msg = (
+            f"Configured Device {AUDIO_DEVICE_NAME} is not available.\n"
+            f"Please set AUDIO_DEVICE_NAME in config.py from following devices:\n\n{info}"
+        )
         raise ValueError(error_msg)
 
     demo.launch(server_name="0.0.0.0", server_port=7860)  # TODO IPやポートは設定に書く
