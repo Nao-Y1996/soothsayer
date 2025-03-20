@@ -81,7 +81,7 @@ def prepare_for_astrology(
 
 
 def generate_astrology_result(
-    astrology_repo: WesternAstrologyStateRepositoryImpl,
+    astrology_repo: WesternAstrologyStateRepository,
 ) -> None:
     """
     占い対象のコメントから占い結果を生成し、DBに保存する
