@@ -2,7 +2,6 @@ from logging import getLogger
 from uuid import uuid4
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
 from sqlalchemy.sql import and_, select
 
 from app.domain.repositories import (
@@ -354,4 +353,37 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             except Exception as e:
                 session.rollback()
                 logger.exception(f"Failed to add initial: {e}")
+                raise e
+
+    def get_waiting_audio_play_state(self) -> list[WesternAstrologyStateEntity]:
+        stmt = (
+            select(WesternAstrologyStatusOrm)
+            .where(
+                and_(
+                    WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
+                    WesternAstrologyStatusOrm.is_played == False,  # noqa: E712
+                )
+            )
+            .join(
+                YoutubeLivechatMessageOrm,
+                YoutubeLivechatMessageOrm.id == WesternAstrologyStatusOrm.message_id,
+            )
+            .order_by(YoutubeLivechatMessageOrm.created_at)
+        )
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                return [
+                    WesternAstrologyStateEntity(
+                        message_id=obj.message_id,
+                        is_target=obj.is_target,
+                        required_info=InfoForAstrologyEntity(**obj.required_info),
+                        result=obj.result,
+                        result_voice_path=obj.result_voice_path,
+                        is_played=obj.is_played,
+                    )
+                    for obj in orm_objects
+                ]
+            except Exception as e:
+                logger.exception(f"Failed to get waiting audio play state: {e}")
                 raise e
