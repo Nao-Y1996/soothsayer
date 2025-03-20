@@ -48,12 +48,13 @@ def initialize_db():
     from app.infrastructure import (
         tables,
     )  # テーブル定義をここで読み込まないとalembicがテーブルを作成できない
+    print(tables)
 
     try:
-        logger.info(f"Strat initializing DB")
+        logger.info("Strat initializing DB")
         engine = create_engine(PG_URL, echo=True)
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine, checkfirst=False)
-        logger.info(f"Successfully initialized DB")
+        logger.info("Successfully initialized DB")
     except Exception as e:
         logger.exception(f"Failed to initialize DB: {e}")
