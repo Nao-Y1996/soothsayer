@@ -24,7 +24,7 @@
 
 2. 依存関係をインストールする
     
-    poetry2系を使用している場合は `poetry self add poetry-plugin-shell` を実行して、`poetry shell`を利用できるようにしてください
+    poetry2系を使用している場合は `poetry self add poetry-plugin-shell` を実行して、`poetry shell`を利用できる必要があります
   
     ```bash
     poetry shell
@@ -32,12 +32,14 @@
     ```
 3. 必要なファイルの作成
 
+   以下のコマンドで `.env` や `config.py` などが作成される
+
     ```bash
-   python setup_init.py
+    poetry run python setup_init.py
     ```
 4. 環境変数のセット
 
-    以下の2つのAPIを利用するためのAPIキーを`.env` にAPIキーを設定してください
+    以下の2つのAPIを利用するためのAPIキーを`.env` にAPIキーを設定する
     - YouTube Data API v3
     - Generative Language API
     
@@ -62,15 +64,42 @@
 6. テーブルの初期化
 
     ```bash
-    alembic upgrade head
+    poetry run alembic upgrade head
     ```
 
-7. アプリケーションを起動する
+7. アプリケーションの初回起動と音声出力先の設定
   
-    初回は少し時間がかかる
+    以下でアプリケーションを起動する
   
     ```bash
-    python gradio_ui.py
+    poetry run python gradio_ui.py
+    ```
+   
+    以下のようなエラーと共に、選択可能な音声出力先が表示される。(MacBookの例)
+
+    ```
+    ValueError: Configured Device  is not available.
+    Please set AUDIO_DEVICE_NAME in config.py from following devices:
+    
+    Index: 0 | Name: BenQ GW2283 | Input Channels: 0 | Output Channels: 2
+    Index: 1 | Name: BenQ GW2283 | Input Channels: 0 | Output Channels: 2
+    Index: 2 | Name: MacBook Pro Microphone | Input Channels: 1 | Output Channels: 0
+    Index: 3 | Name: MacBook Pro Speakers | Input Channels: 0 | Output Channels: 2
+    Index: 4 | Name: VB-Cable | Input Channels: 2 | Output Channels: 2
+    ```
+   
+   この中から、出力先のデバイス名を選択して、`app/config.py`に設定します。  例えば `VB-Cable`を出力先にした場合は、以下のように設定する。
+   
+   ```python
+   # ======= 音声出力先の設定 ========
+   AUDIO_DEVICE_NAME = "VB-Cable"
+   # ================================
+   ```
+   
+   再度 以下のコマンドでアプリケーションを起動する
+  
+    ```bash
+    poetry run python gradio_ui.py
     ```
 
 8. ブラウザで`http://localhost:7860/?__theme=light` にアクセスし、画面が表示されれば環境構築は成功です

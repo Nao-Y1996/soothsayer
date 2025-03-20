@@ -23,7 +23,7 @@
 2. アプリケーションを起動する
 
   ```bash
-  python gradio_ui.py
+  poetry run python gradio_ui.py
   ```
 
 3. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
