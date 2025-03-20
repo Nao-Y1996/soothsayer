@@ -17,10 +17,6 @@ from app.domain.westernastrology import (
 from app.domain.youtube.live import LiveChatMessageEntity
 from app.infrastructure.external.llm.dtos import Output
 from app.infrastructure.external.llm.llm_google import get_output
-from app.infrastructure.repositoriesImpl import (
-    WesternAstrologyStateRepositoryImpl,
-    YoutubeLiveChatMessageRepositoryImpl,
-)
 
 logger = getLogger(__name__)
 
@@ -81,7 +77,7 @@ def prepare_for_astrology(
 
 
 def generate_astrology_result(
-    astrology_repo: WesternAstrologyStateRepositoryImpl,
+    astrology_repo: WesternAstrologyStateRepository,
 ) -> None:
     """
     占い対象のコメントから占い結果を生成し、DBに保存する
@@ -144,22 +140,27 @@ def generate_astrology_result(
 
 class GenerateResultTask(ThreadTask):
 
+    def __init__(
+        self,
+        name: str,
+        western_astrology_repo: WesternAstrologyStateRepository,
+        livechat_repo: YoutubeLiveChatMessageRepository,
+    ):
+        super().__init__(name)
+        self.western_astrology_repo = western_astrology_repo
+        self.livechat_repo = livechat_repo
+
     def run(self):
         """占星術結果生成の無限ループ処理"""
-        livechat_repo = YoutubeLiveChatMessageRepositoryImpl()
-        astrology_repo = WesternAstrologyStateRepositoryImpl()
         logger.info("Start Thread for generating result.")
         while not self.stop_event.is_set():
             try:
                 # 占いの準備
-                prepare_for_astrology(astrology_repo, livechat_repo)
+                prepare_for_astrology(self.western_astrology_repo, self.livechat_repo)
                 # 占い結果の生成
-                generate_astrology_result(astrology_repo)
+                generate_astrology_result(self.western_astrology_repo)
                 # 停止フラグのチェック間隔として sleep
                 time.sleep(1)
             except Exception as e:
                 logger.exception("Failed to generate result: " + str(e))
         logger.info("Stopped Thread for generating result.")
-
-
-result_thread_task = GenerateResultTask("result")

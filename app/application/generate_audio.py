@@ -7,7 +7,6 @@ from app.core.const import AUDIO_DIR
 from app.domain.repositories import WesternAstrologyStateRepository
 from app.domain.westernastrology import WesternAstrologyStateEntity
 from app.infrastructure.external.stylebertvit2.voice import is_alive
-from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl
 
 logger = getLogger(__name__)
 
@@ -59,6 +58,12 @@ def result_to_voice(astrology_repo: WesternAstrologyStateRepository) -> None:
 
 class VoiceTask(ThreadTask):
 
+    def __init__(
+        self, name: str, western_astrology_repo: WesternAstrologyStateRepository
+    ):
+        super().__init__(name)
+        self.western_astrology_repo = western_astrology_repo
+
     def start(self) -> str:
         if not is_alive():
             logger.warning("Voice model is not alive.")
@@ -67,15 +72,11 @@ class VoiceTask(ThreadTask):
 
     def run(self):
         """占星術結果を音声変換する無限ループ処理"""
-        astrology_repo = WesternAstrologyStateRepositoryImpl()
         logger.info("Start Thread for generating voice audio.")
         while not self.stop_event.is_set():
             try:
-                result_to_voice(astrology_repo)
+                result_to_voice(self.western_astrology_repo)
                 time.sleep(0.1)
             except Exception as e:
                 logger.exception("Failed to generate voice audio: " + str(e))
         logger.info("Stopped Thread for generating voice audio.")
-
-
-voice_thread_task = VoiceTask("voice")

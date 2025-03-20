@@ -8,17 +8,18 @@ from logging import getLogger
 import gradio as gr
 
 from app.application.audio import play_audio_file
-from app.application.generate_result import result_thread_task
-from app.application.generate_audio import voice_thread_task
-from app.application.store_livechat import livechat_thread_task
+from app.application.generate_result import GenerateResultTask
+from app.application.generate_audio import VoiceTask
+from app.application.store_livechat import LivechatTask
 from app.config import (
     OBS_SCENE_NAME,
     OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT,
 )
 from app.core.const import GRAFANA_URL
-from app.domain.repositories import WesternAstrologyStateRepository
+from app.application.stete_monitor import WesternAstrologyStateMonitor
 from app.infrastructure.db_common import initialize_db as init_db
-from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl
+from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl, \
+    YoutubeLiveChatMessageRepositoryImpl
 from app.interfaces.gradio_app.constract_html import (
     div_center_bold_text,
     h1_tag,
@@ -47,6 +48,13 @@ from app.interfaces.obs.ui import (
 logging_config.configure_logging()
 logger = getLogger(__name__)
 
+# スレッドタスクの初期化
+voice_thread_task = VoiceTask("voice", WesternAstrologyStateRepositoryImpl())
+result_thread_task = GenerateResultTask("result", WesternAstrologyStateRepositoryImpl(), YoutubeLiveChatMessageRepositoryImpl())
+livechat_thread_task = LivechatTask("livechat", WesternAstrologyStateRepositoryImpl(), YoutubeLiveChatMessageRepositoryImpl())
+
+# リポジトリ
+western_astrology_repo = WesternAstrologyStateRepositoryImpl()
 
 def initialize_db():
     try:
@@ -60,9 +68,8 @@ def get_latest_data() -> list[AstrologyData]:
     """
     最新のデータを取得する
     """
-    astrology_repo = WesternAstrologyStateRepositoryImpl()
     state_list, chat_message_list = (
-        astrology_repo.get_all_prepared_state_and_message()
+        western_astrology_repo.get_all_prepared_state_and_message()
     )
     all_astrology_data = []
     for state, message in zip(state_list, chat_message_list, strict=True):
@@ -166,7 +173,6 @@ def next_data(
 def play_current_audio(
     current_index,
     data_list: list[AstrologyData],
-    astro_repo: WesternAstrologyStateRepository,
 ) -> None:
     """
     「再生」ボタン：現在表示中の AstrologyData の voice_path の .wav ファイルを再生する。
@@ -178,7 +184,7 @@ def play_current_audio(
     play_audio_file(data.state.result_voice_path)
     # 再生済みフラグを更新
     data.state.is_played = True
-    astro_repo.save([data.state])
+    western_astrology_repo.save([data.state])
 
 
 @unpack_latest_state_view
@@ -187,8 +193,7 @@ def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
     UI用のラッパー関数。
     再生処理後に update_data を呼び出して最新情報を反映する。
     """
-    repo = WesternAstrologyStateRepositoryImpl()
-    play_current_audio(current_index, data_list, repo)
+    play_current_audio(current_index, data_list)
     current_data = data_list[current_index]
     # return update_data()ともできるが、連打すると更新処理が多すぎてコネクションプールが枯渇する可能性がある
     return LatestGlobalStateView(
