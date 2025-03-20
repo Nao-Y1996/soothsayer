@@ -57,17 +57,18 @@ mode_type: Literal["test", "prod"] = "test"  # test or prod
   - 例: {positions_text}, {name}
 
 ### OBSの設定
-
-#### OBS側の設定
-
+#### テキストソースの設定
 - ユーザー名を表示するテキストソースを作成
   - Text input mode を `From file` に設定し、ファイルパスを `app/interfaces/obs/texts/username.txt` に設定してください
 - コメントを表示するテキストソースを作成
   - Text input mode を `From file` に設定し、ファイルパスを `app/interfaces/obs/texts/comment.txt` に設定してください
 - 占いの待ち人数を表示するテキストソースを作成
   - Text input mode を `From file` に設定し、ファイルパスを `app/interfaces/obs/texts/waiting_display.txt` に設定してください
-- 上記3つのテキストソースをまとめるためのグループを作成
+- 占い結果の一部分を表示するテキストソースを作成
+  - Text input mode を `From file` に設定し、ファイルパスを `app/interfaces/obs/texts/result.txt` に設定してください
+- 上記4つの**テキストソースをまとめるためのグループ**を作成
 
+#### webソケットの設定
 - OBSのWEBソケットサーバー設定 （`tools` → `WebSocket Server Setting`）
   - `Enable WebSocket server` にチェックを入れてください
   - OBS_PORT: OBSのWEBソケットサーバー設定の、サーバーポート番号
@@ -76,4 +77,4 @@ mode_type: Literal["test", "prod"] = "test"  # test or prod
 #### configでの設定
 - `app/config.py` の以下の部分で OBS に合わせて設定を変更してください
   - OBS_SCENE_NAME: OBSのシーン名
-  - OBS_SOURCE_NAME_FOR_GROUP: 3つのテキストソースをまとめるためのグループ名
+  - OBS_SOURCE_NAME_FOR_GROUP: テキストソースをまとめるためのグループ名
