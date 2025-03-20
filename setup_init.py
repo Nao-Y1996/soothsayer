@@ -89,10 +89,10 @@ def setup_env():
     dot_env = ROOT / ".env"
     if dot_env.exists():
         backup_env = str(dot_env).replace(".env", f".env.backup_{NOW_STR}")
-        shutil.copy(dot_env_sample, backup_env)
+        shutil.copy(dot_env, backup_env)
         logger.info(f".env was copied to {backup_env}")
 
-    shutil.copy(str(dot_env), str(dot_env))
+    shutil.copy(str(dot_env_sample), str(dot_env))
     logger.info(f".env was created in {dot_env}")
     logger.info(f"【TODO】Please set your own env variables to {dot_env}")
 
