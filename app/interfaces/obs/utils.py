@@ -11,6 +11,7 @@ from app.config import (
     OBS_PORT,
     USER_NAME_FILE_PATH,
     WAITING_DISPLAY_FILE_PATH,
+    RESULT_FILE_PATH,
 )
 from app.interfaces.obs.dtos.sceneitem import SceneItem, SceneItemTransform, SceneList
 
@@ -131,6 +132,16 @@ def update_waiting_display(display_content: str):
             f.write(display_content)
     except Exception as e:
         logger.exception(f"Failed to update waiting list: {e}")
+        raise e
+
+
+def update_result_to_show(result: str):
+    logger.info(f"{result=}")
+    try:
+        with open(RESULT_FILE_PATH, mode="w", encoding="utf-8") as f:
+            f.write(result)
+    except Exception as e:
+        logger.exception(f"Failed to update result: {e}")
         raise e
 
 

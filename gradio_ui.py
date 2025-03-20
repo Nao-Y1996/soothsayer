@@ -16,6 +16,7 @@ from app.config import (
     OBS_SCENE_NAME,
     OBS_SOURCE_NAME_FOR_GROUP,
 )
+from app.application.text_service import extract_enclosed
 from app.core.const import GRAFANA_URL
 from app.infrastructure.db_common import initialize_db as init_db
 from app.infrastructure.repositoriesImpl import (
@@ -35,6 +36,7 @@ from app.interfaces.obs.ui import (
     get_info_html,
     get_play_button_name,
     get_user_name_and_comment_html,
+    as_code_block
 )
 from app.interfaces.obs.utils import (
     get_comment,
@@ -43,6 +45,7 @@ from app.interfaces.obs.utils import (
     set_scene_item_enabled,
     update_comment,
     update_user_name,
+    update_result_to_show
 )
 
 logging_config.configure_logging()
@@ -122,7 +125,7 @@ def update_data(current_index) -> LatestGlobalStateView:
             all_data=data_list,
             info_html=get_info_html(current_index, data_list),
             chat_html="",
-            astrology_result_text="",
+            astrology_result_text=as_code_block(""),
             current_index=current_index,
             play_button_name=get_play_button_name(None),
         )
@@ -133,7 +136,7 @@ def update_data(current_index) -> LatestGlobalStateView:
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_result_text=current_data.state.result,
+        astrology_result_text=as_code_block(current_data.state.result),
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -156,7 +159,7 @@ def prev_data(
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_result_text=current_data.state.result,
+        astrology_result_text=as_code_block(current_data.state.result),
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -179,7 +182,7 @@ def next_data(
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_result_text=current_data.state.result,
+        astrology_result_text=as_code_block(current_data.state.result),
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -215,7 +218,7 @@ def play_current_audio_ui(current_index, data_list) -> LatestGlobalStateView:
         all_data=data_list,
         info_html=get_info_html(current_index, data_list),
         chat_html=get_chat_html(current_data),
-        astrology_result_text=current_data.state.result,
+        astrology_result_text=as_code_block(current_data.state.result),
         current_index=current_index,
         play_button_name=get_play_button_name(current_data),
     )
@@ -230,10 +233,13 @@ def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
     current_data = data_list[current_index]
     user_name = current_data.chat_message.authorDetails.displayName
     comment = current_data.chat_message.snippet.displayMessage
+    results_to_show: list[str] = extract_enclosed(current_data.state.result)  # << >> で囲まれた部分を抽出
+    result_to_show = "".join(results_to_show)
 
     # OBSで読み取られるファイルに書き込み
     update_user_name(user_name)
     update_comment(comment)
+    update_result_to_show(result_to_show)
 
     # OBSで読み取られるファイルから読み込み（書き込みが成功しているか確認する意味も含む）
     return gr.HTML(value=get_user_name_and_comment_html(get_user_name(), get_comment()))
@@ -268,7 +274,7 @@ with gr.Blocks(css=custom_css) as demo:
 
     gr.HTML(value=h2_tag("占い結果"))
     astrology_md_component = gr.Markdown(
-        value="", elem_classes=["custom-astrology-html"]
+        value="", elem_classes=["custom-astrology-html"], container=True
     )
 
     # 内部状態を保持するための hidden state

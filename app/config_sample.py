@@ -41,7 +41,11 @@ COMMENT_FILE_PATH = (
     Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "comment.txt"
 )
 WAITING_DISPLAY_FILE_PATH = (
-    Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "waiting_display.txt"
+    Path(__file__).resolve().parent
+    / "interfaces"
+    / "obs"
+    / "texts"
+    / "waiting_display.txt"
 )
 # ===================================
 

@@ -3,6 +3,7 @@ from logging import getLogger
 
 from app.application.audio import txt_to_audiofile
 from app.application.thread_manager import ThreadTask
+from app.application.text_service import extract_enclosed, remove_enclosed
 from app.core.const import AUDIO_DIR
 from app.domain.repositories import WesternAstrologyStateRepository
 from app.domain.westernastrology import WesternAstrologyStateEntity
@@ -34,7 +35,10 @@ def result_to_voice(astrology_repo: WesternAstrologyStateRepository) -> None:
             # 音声化
             try:
                 audio_file_path = txt_to_audiofile(
-                    text=result,
+                    # << >> で囲まれた部分を削除して音声化
+                    text=remove_enclosed(
+                        result
+                    ),  # TODO: 音声化し使用したテキストを保存する
                     audiofile_path=AUDIO_DIR / f"{astrology_state.message_id}.wav",
                 )
                 astrology_state.result_voice_path = audio_file_path

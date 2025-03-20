@@ -79,6 +79,10 @@ def get_play_button_name(data: AstrologyData | None):
     return btn_name
 
 
+def as_code_block(text: str) -> str:
+    return "```\n" + text + "\n```"
+
+
 custom_css = """
 /* バックグランド処理のボタン */
 .custom-start-btn {
