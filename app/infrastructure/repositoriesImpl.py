@@ -373,17 +373,23 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
         with SessionLocal() as session:
             try:
                 orm_objects = session.execute(stmt).scalars().all()
-                return [
-                    WesternAstrologyStateEntity(
-                        message_id=obj.message_id,
-                        is_target=obj.is_target,
-                        required_info=InfoForAstrologyEntity(**obj.required_info),
-                        result=obj.result,
-                        result_voice_path=obj.result_voice_path,
-                        is_played=obj.is_played,
+                results = []
+                for obj in orm_objects:
+                    if obj.required_info:
+                        required_info = InfoForAstrologyEntity(**obj.required_info)
+                    else:
+                        required_info = None
+                    results.append(
+                        WesternAstrologyStateEntity(
+                            message_id=obj.message_id,
+                            is_target=obj.is_target,
+                            required_info=required_info,
+                            result=obj.result,
+                            result_voice_path=obj.result_voice_path,
+                            is_played=obj.is_played,
+                        )
                     )
-                    for obj in orm_objects
-                ]
+                return results
             except Exception as e:
                 logger.exception(f"Failed to get waiting audio play state: {e}")
                 raise e
