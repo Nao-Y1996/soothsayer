@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Literal
 
 # testモードではライブチャットので取得したコメントはdummy_messageで置き換えられる
-mode_type: Literal["test", "prod"] = "test"  # test or prod
+mode_type: Literal["test", "prod"] = "prod"  # test or prod
 
 # 音声ファイルの保存先ディレクトリ（プロジェクトのappディレクトリからの相対パス）
 audio_dir = Path("output") / "audio"
@@ -33,12 +33,15 @@ OBS_PASSWORD = "some_password"
 
 # 画面設定
 OBS_SCENE_NAME = "サンプルシーン"
-OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT = "uranai"
+OBS_SOURCE_NAME_FOR_GROUP = "uranai"
 USER_NAME_FILE_PATH = (
     Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "username.txt"
 )
 COMMENT_FILE_PATH = (
     Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "comment.txt"
+)
+WAITING_DISPLAY_FILE_PATH = (
+    Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "waiting_display.txt"
 )
 # ===================================
 
@@ -49,6 +52,6 @@ if __name__ == "__main__":
     print(OBS_PORT)
     print(OBS_PASSWORD)
     print(OBS_SCENE_NAME)
-    print(OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT)
+    print(OBS_SOURCE_NAME_FOR_GROUP)
     print(USER_NAME_FILE_PATH)
     print(COMMENT_FILE_PATH)

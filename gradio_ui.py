@@ -14,7 +14,7 @@ from app.application.obs_display_service import DisplayWaitingCountTreadTask
 from app.application.store_livechat import LivechatTask
 from app.config import (
     OBS_SCENE_NAME,
-    OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT,
+    OBS_SOURCE_NAME_FOR_GROUP,
 )
 from app.core.const import GRAFANA_URL
 from app.infrastructure.db_common import initialize_db as init_db
@@ -241,7 +241,7 @@ def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
 
 def toggle_visibility_user_info_in_obs(enable: bool):
     source_id_for_user_name = get_scene_item_id_by_name(
-        OBS_SCENE_NAME, OBS_SOURCE_NAME_FOR_GROUP_OF_USER_NANE_AND_COMMENT
+        OBS_SCENE_NAME, OBS_SOURCE_NAME_FOR_GROUP
     )
     set_scene_item_enabled(
         scene_name=OBS_SCENE_NAME, scene_item_id=source_id_for_user_name, enabled=enable
