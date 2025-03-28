@@ -6,19 +6,15 @@ from uuid import uuid4
 from app.application.filter_yt_comment import is_astrology_target
 from app.application.thread_manager import ThreadTask
 from app.core.const import get_dummy_live_chat_message, is_test
+from app.domain.repositories import YoutubeLiveChatMessageRepository
 from app.domain.youtube.live import LiveChatMessageEntity
-from app.domain.repositories import (
-    YoutubeLiveChatMessageRepository,
-)
 from app.infrastructure.external.youtube.helper import (
     convert_chat_messages,
     fetch_chat_messages,
     get_live_chat_id,
     get_youtube_service,
 )
-from app.infrastructure.repositoriesImpl import (
-    WesternAstrologyStateRepositoryImpl,
-)
+from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl
 
 POLLING_INTERVAL_DEFAULT: int = 5  # デフォルトのポーリング間隔（秒）
 

@@ -2,8 +2,8 @@ import time
 from logging import getLogger
 
 from app.application.audio import txt_to_audiofile
+from app.application.text_service import remove_enclosed
 from app.application.thread_manager import ThreadTask
-from app.application.text_service import extract_enclosed, remove_enclosed
 from app.core.const import AUDIO_DIR
 from app.domain.repositories import WesternAstrologyStateRepository
 from app.domain.westernastrology import WesternAstrologyStateEntity

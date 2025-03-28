@@ -10,12 +10,16 @@ import gradio as gr
 from app.application.audio import play_audio_file
 from app.application.generate_audio import VoiceTask
 from app.application.generate_result import GenerateResultTask
-from app.application.obs_display_service import DisplayWaitingCountTreadTask
-from app.application.store_livechat import LivechatTask
-from app.config import (
-    OBS_SCENE_NAME,
-    OBS_SOURCE_NAME_FOR_GROUP,
+from app.application.obs_display_service import (
+    DisplayWaitingCountTreadTask,
+    get_comment,
+    get_user_name,
+    toggle_visibility_user_info_in_obs,
+    update_comment,
+    update_result_to_show,
+    update_user_name,
 )
+from app.application.store_livechat import LivechatTask
 from app.application.text_service import extract_enclosed
 from app.core.const import GRAFANA_URL
 from app.infrastructure.db_common import initialize_db as init_db
@@ -31,21 +35,12 @@ from app.interfaces.gradio_app.constract_html import (
 from app.interfaces.obs.ui import (
     AstrologyData,
     LatestGlobalStateView,
+    as_code_block,
     custom_css,
     get_chat_html,
     get_info_html,
     get_play_button_name,
     get_user_name_and_comment_html,
-    as_code_block
-)
-from app.interfaces.obs.utils import (
-    get_comment,
-    get_scene_item_id_by_name,
-    get_user_name,
-    set_scene_item_enabled,
-    update_comment,
-    update_user_name,
-    update_result_to_show
 )
 
 logging_config.configure_logging()
@@ -233,7 +228,9 @@ def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
     current_data = data_list[current_index]
     user_name = current_data.chat_message.authorDetails.displayName
     comment = current_data.chat_message.snippet.displayMessage
-    results_to_show: list[str] = extract_enclosed(current_data.state.result)  # << >> で囲まれた部分を抽出
+    results_to_show: list[str] = extract_enclosed(
+        current_data.state.result
+    )  # << >> で囲まれた部分を抽出
     result_to_show = "".join(results_to_show)
 
     # OBSで読み取られるファイルに書き込み
@@ -243,15 +240,6 @@ def update_user_info_in_obs(current_index: int, data_list: list[AstrologyData]):
 
     # OBSで読み取られるファイルから読み込み（書き込みが成功しているか確認する意味も含む）
     return gr.HTML(value=get_user_name_and_comment_html(get_user_name(), get_comment()))
-
-
-def toggle_visibility_user_info_in_obs(enable: bool):
-    source_id_for_user_name = get_scene_item_id_by_name(
-        OBS_SCENE_NAME, OBS_SOURCE_NAME_FOR_GROUP
-    )
-    set_scene_item_enabled(
-        scene_name=OBS_SCENE_NAME, scene_item_id=source_id_for_user_name, enabled=enable
-    )
 
 
 with gr.Blocks(css=custom_css) as demo:
@@ -450,14 +438,16 @@ with gr.Blocks(css=custom_css) as demo:
     )
     # 待ち人数表示
     display_waiting_num_start.click(
-        fn=waiting_count_display_thread_task.start, outputs=display_waiting_num_status,
+        fn=waiting_count_display_thread_task.start,
+        outputs=display_waiting_num_status,
     ).then(
         fn=div_center_bold_text,
         inputs=[display_waiting_num_status],
         outputs=display_waiting_num_status,
     )
     display_waiting_num_stop.click(
-        fn=waiting_count_display_thread_task.stop, outputs=display_waiting_num_status,
+        fn=waiting_count_display_thread_task.stop,
+        outputs=display_waiting_num_status,
     ).then(
         fn=div_center_bold_text,
         inputs=[display_waiting_num_status],

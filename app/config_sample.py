@@ -47,7 +47,7 @@ WAITING_DISPLAY_FILE_PATH = (
     / "texts"
     / "waiting_display.txt"
 )
-RESULT_FILE_PATH =(
+RESULT_FILE_PATH = (
     Path(__file__).resolve().parent / "interfaces" / "obs" / "texts" / "result.txt"
 )
 # ===================================
