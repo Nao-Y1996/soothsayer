@@ -159,6 +159,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                         result=obj.result,
                         result_voice_path=obj.result_voice_path,
                         is_played=obj.is_played,
+                        created_at=obj.created_at,
                     )
                     for obj in orm_objects
                 ]
@@ -200,6 +201,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                         result=state_obj.result,
                         result_voice_path=state_obj.result_voice_path,
                         is_played=state_obj.is_played,
+                        created_at=state_obj.created_at,
                     )
                     state_entities.append(state_entity)
                     livechat_messages.append(
@@ -241,6 +243,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                         result=obj.result,
                         result_voice_path=obj.result_voice_path,
                         is_played=obj.is_played,
+                        created_at=obj.created_at,
                     )
                     for obj in orm_objects
                 ]
@@ -277,6 +280,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                         result=obj.result,
                         result_voice_path=obj.result_voice_path,
                         is_played=obj.is_played,
+                        created_at=obj.created_at,
                     )
                     for obj in orm_objects
                 ]
@@ -312,6 +316,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                         result=obj.result,
                         result_voice_path=obj.result_voice_path,
                         is_played=obj.is_played,
+                        created_at=obj.created_at,
                     )
                     for obj in orm_objects
                 ]
@@ -387,9 +392,47 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                             result=obj.result,
                             result_voice_path=obj.result_voice_path,
                             is_played=obj.is_played,
+                            created_at=obj.created_at,
                         )
                     )
                 return results
             except Exception as e:
                 logger.exception(f"Failed to get waiting audio play state: {e}")
+                raise e
+
+    def get_should_play_audio_status(self) -> list[WesternAstrologyStateEntity]:
+        stmt = (
+            select(WesternAstrologyStatusOrm)
+            .where(
+                and_(
+                    WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
+                    WesternAstrologyStatusOrm.is_played == False,  # noqa: E712
+                    WesternAstrologyStatusOrm.result_voice_path != "",
+                )
+            )
+            .order_by(WesternAstrologyStatusOrm.created_at)
+        )
+        with SessionLocal() as session:
+            try:
+                orm_objects = session.execute(stmt).scalars().all()
+                results = []
+                for obj in orm_objects:
+                    if obj.required_info:
+                        required_info = InfoForAstrologyEntity(**obj.required_info)
+                    else:
+                        required_info = None
+                    results.append(
+                        WesternAstrologyStateEntity(
+                            message_id=obj.message_id,
+                            is_target=obj.is_target,
+                            required_info=required_info,
+                            result=obj.result,
+                            result_voice_path=obj.result_voice_path,
+                            is_played=obj.is_played,
+                            created_at=obj.created_at,
+                        )
+                    )
+                return results
+            except Exception as e:
+                logger.exception(f"Failed to get should play audio: {e}")
                 raise e

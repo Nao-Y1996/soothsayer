@@ -115,3 +115,6 @@ class WesternAstrologyStateEntity(BaseModel):
     is_played: bool = Field(
         False, description="Whether the result has been played or not"
     )
+    created_at: datetime = Field(
+        ..., description="The time when this state was created"
+    )
