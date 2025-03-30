@@ -22,5 +22,6 @@ def calc_swiss_ephemeris_sample() -> None:
     logger.info(f"Julian Date: {jd}")
     logger.info(f"Sun position: {result}")
 
+
 if __name__ == "__main__":
     calc_swiss_ephemeris_sample()
