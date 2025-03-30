@@ -172,7 +172,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(1) as 占い完了数\nFROM western_astrology_statuss\nWHERE is_target\n  and required_info != '{}' and result != '' and result_voice_path = ''",
+          "rawSql": "SELECT COUNT(1) as 占い完了数\nFROM western_astrology_statuss\nWHERE is_target\n  and required_info != '{}' and result != ''",
           "refId": "占い完了数",
           "sql": {
             "columns": [
