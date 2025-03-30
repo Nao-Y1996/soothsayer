@@ -17,7 +17,8 @@ from app.application.obs_display_service import (
     toggle_visibility_user_info_in_obs,
     update_comment,
     update_result_to_show,
-    update_user_name, update_waiting_display,
+    update_user_name,
+    update_waiting_display,
 )
 from app.application.store_livechat import LivechatTask
 from app.application.text_service import extract_enclosed

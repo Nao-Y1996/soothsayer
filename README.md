@@ -72,7 +72,7 @@
     以下でアプリケーションを起動する
   
     ```bash
-    poetry run python gradio_ui.py
+    poetry run python ui_manual.py
     ```
    
     以下のようなエラーと共に、選択可能な音声出力先が表示される。(MacBookの例)
@@ -97,10 +97,16 @@
    ```
    
    再度 以下のコマンドでアプリケーションを起動する
-  
-    ```bash
-    poetry run python gradio_ui.py
-    ```
+
+   ```bash
+   poetry run python ui_manual.py
+   ```
+
+   OBSの画面更新と音声再生を自動で行うする場合は以下のコマンドで起動する
+   
+   ```bash
+   poetry run python ui_auto.py
+   ```
 
 8. ブラウザで`http://localhost:7860/?__theme=light` にアクセスし、画面が表示されれば環境構築は成功です
 
@@ -121,49 +127,59 @@
 | created_at | timestamp | メッセージの作成日時               |
 | updated_at | timestamp | メッセージの更新日時               |
 
-### astrology_status
+### western_astrology_status
 
 占星術の状態を保存するテーブル
 
-| カラム名              | データ型  | 説明               |
-|-------------------|-------|------------------|
-| message_id        | str   | メッセージのID, 主キー    |
-| is_target         | bool  | 占い対象かどうか         |
-| required_info     | jsonb | 占いをするために必要な情報    |
-| result            | text  | 占いの結果            |
-| result_voice_path | text  | 音声ファイルのパス        |
-| is_played         | bool  | 音声ファイルが再生されたかどうか |
+| カラム名              | データ型      | 説明               |
+|-------------------|-----------|------------------|
+| message_id        | str       | メッセージのID, 主キー    |
+| is_target         | bool      | 占い対象かどうか         |
+| required_info     | jsonb     | 占いをするために必要な情報    |
+| result            | text      | 占いの結果            |
+| result_voice_path | text      | 音声ファイルのパス        |
+| is_played         | bool      | 音声ファイルが再生されたかどうか |
+| created_at        | timestamp | 作成日時             |
+| updated_at        | timestamp | 更新日時             |
 
 ## 処理の詳細
 
-3スレッドの処理とGradioのUIによって構成されている
+4スレッドの処理とGradioのUIによって構成されている
 
 ### スレッド1: ライブ配信のコメント取得
 
 - youtubeAPIを使って占いをするライブ配信に対するコメントを取得し続ける
 - 取得したコメントを`youtube_livechat_message`の`message`列に入れる
-- `youtube_livechat_message`テーブルから`astrology_result`に`message_id`が存在しないレコードを取得する
+- `youtube_livechat_message`テーブルから`western_astrology_status`に`message_id`が存在しないレコードを取得する
 - コメントの内容を解析し、占い対象かどうかを判定する（コメントに`占い依頼`キーワードが含まれているかどうか）
-- `astrology_result`テーブルに対して、`is_target`を設定した上で保存する
+- `western_astrology_status`テーブルに対して、`is_target`を設定した上で保存する
 
 ### スレッド2: 占い対象のコメントから占いに必要な情報を取得
 
-- 占い対象のコメント一覧のそれぞれに対して、`message`をLLMに投げて`required_info`を抽出して`astrology_result`テーブルに保存する
-- `astrology_result`テーブルから、「`result`がなく、`required_info`がある」レコード一覧を取得する
+- 占い対象のコメント一覧のそれぞれに対して、`message`をLLMに投げて`required_info`を抽出して`western_astrology_status`テーブルに保存する
+- `western_astrology_status`テーブルから、「`result`がなく、`required_info`がある」レコード一覧を取得する
 - レコードのそれぞれに対して`required_info`からLLMのAPIで占い結果を生成する
 - 生成され次第、順番に占い結果をテーブルに反映する（`required_info`と`result`を更新する）
 
 ### スレッド3: 音声ファイルの生成
 
-- `astrology_state`テーブルから、`result`が存在し、`result_voice_path`がない」レコード一覧を取得する
+- `western_astrology_status`テーブルから、`result`が存在し、`result_voice_path`がない」レコード一覧を取得する
 - レコード一覧のそれぞれに対して、text2speechで音声ファイルを作成してディレクトリに保存する（時間がかかる）
 - 保存した音声ファイルのパスをテーブルに反映する（`result_voice_path`を更新する）
 
+### スレッド4: 音声ファイルの再生とOBSの画面更新
+
+このスレッドは、ui_auto.pyを実行した場合のみ動作する（ui_manual.pyでは手動で音声ファイルの再生とOBSの画面更新を行う）
+
+- `western_astrology_status`テーブルから、`result_voice_path`が存在し、`is_played`がFalseのレコード一覧を取得する
+- 一覧のうち最も古いレコードの音声ファイルともるstatusでOBSの画面を更新する
+- 音声ファイルを再生する
+
 ### 画面表示
 
-- 更新ボタン: `astrology_state`テーブルから、`required_info`が空ではない（占いに必要な情報抽出が完了した）レコード一覧を取得する
+- 更新ボタン: `western_astrology_status`テーブルから、`required_info`が空ではない（占いに必要な情報抽出が完了した）レコード一覧を取得する
 - Progress View のリンク: Grafanaのダッシュボードにリンクしており、データの生成状況が可視化されている
-- 3つの START/STOP ボタン: 3つの処理（スレッド）の開始と停止を行う
+- START/STOP ボタン: 各スレッドの開始と停止を行う
 
 ### その他
 

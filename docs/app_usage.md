@@ -16,15 +16,23 @@
 
 1. DBとGrafanaを立ち上げる
 
-  ```bash
-  docker-compose up -d
-  ```
+    ```bash
+    docker-compose up -d
+    ```
 
 2. アプリケーションを起動する
 
-  ```bash
-  poetry run python gradio_ui.py
-  ```
+    OBSの画面更新と音声再生をマニュアル管理する場合
+    
+    ```bash
+    poetry run python ui_manual.py
+    ```
+
+    OBSの画面更新と音声再生する場合
+    
+    ```bash
+    poetry run python ui_auto.py
+    ```
 
 3. ブラウザで`http://localhost:7860/?__theme=light` にアクセスする
 

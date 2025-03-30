@@ -16,7 +16,8 @@ from app.application.obs_display_service import (
     get_user_name,
     update_comment,
     update_result_to_show,
-    update_user_name, update_waiting_display,
+    update_user_name,
+    update_waiting_display,
 )
 from app.application.store_livechat import LivechatTask
 from app.application.text_service import extract_enclosed
@@ -34,10 +35,7 @@ from app.interfaces.gradio_app.constract_html import (
     h1_tag,
     h2_tag,
 )
-from app.interfaces.obs.ui import (
-    custom_css,
-    get_user_name_and_comment_html,
-)
+from app.interfaces.obs.ui import custom_css, get_user_name_and_comment_html
 
 
 def initialize_db():
@@ -140,9 +138,10 @@ auto_system_thread_task = AutoWesternAstrologyThreadTask(
 with gr.Blocks(css=custom_css) as demo:
     gr.HTML(h1_tag("YouTube Live AI占い"))
 
-    gr.HTML(h2_tag("バックグラウンドの処理の管理"))
-
-    gr.HTML(f"""<a href="{GRAFANA_URL}">Progress View </a>""")
+    gr.HTML(
+        f"""<a href="{GRAFANA_URL}" style="font-size: 18px; font-weight: bold;"> 進行状況 </a> 
+    <span style="font-size: 18px;">（ユーザー名: admin, パスワード: admin）</span>"""
+    )
 
     video_id_input = gr.Textbox(
         interactive=True,

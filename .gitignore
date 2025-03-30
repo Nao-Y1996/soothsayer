@@ -1,5 +1,6 @@
 tmp
-.env
+.env**
+!.env.sample
 log
 app/output/**
 app/interfaces/obs/texts/**
