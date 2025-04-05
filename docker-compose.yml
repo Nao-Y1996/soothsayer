@@ -12,7 +12,7 @@ services:
       # もし環境変数 POSTGRES_PORT が定義されていて空でなければその値を使い、定義されていない（または空の場合）ならば代わりに 5432 を使う
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
   grafana:
     image: grafana/grafana:latest
@@ -30,6 +30,6 @@ services:
     depends_on:
       - postgres
 
-# volumes:
-  # pgdata:
+volumes:
+  pgdata:
   # grafana-storage:
