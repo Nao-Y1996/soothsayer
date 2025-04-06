@@ -31,11 +31,11 @@ class WesternAstrologyStatusOrm(Base, TimestampMixin, TableNameMixin):
     # 占い対象かどうか
     is_target: Mapped[bool] = mapped_column(nullable=False)
     # 占いに必要な情報
-    required_info: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=True)
+    required_info: Mapped[dict] = mapped_column(JSONB, default=dict(), nullable=False)
     # 占い結果: text 型
-    result: Mapped[str] = mapped_column(Text, default="", nullable=True)
+    result: Mapped[str] = mapped_column(Text, default="", nullable=False)
     # 音声ファイルのパス
-    result_voice_path: Mapped[str] = mapped_column(Text, default="", nullable=True)
+    result_voice_path: Mapped[str] = mapped_column(Text, default="", nullable=False)
     is_played: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     def construct_from_entity(

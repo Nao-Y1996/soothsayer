@@ -90,6 +90,19 @@ class InfoForAstrologyEntity(BaseModel):
             return False
         return all([self.name, self.birthday, self.birth_time, self.birthplace])
 
+    @classmethod
+    def get_initial(cls):
+        """
+        Get the initial value of the entity.
+        """
+        return InfoForAstrologyEntity(
+            name="",
+            birthday="",
+            birth_time="",
+            birthplace="",
+            worries="",
+        )
+
     def __str__(self):
         return f"{self.name} ({self.birthday} {self.birth_time} {self.birthplace}), worries: {self.worries}"
 
@@ -105,8 +118,8 @@ class WesternAstrologyStateEntity(BaseModel):
     is_target: bool = Field(
         ..., description="whether this state is target for astrology"
     )
-    required_info: InfoForAstrologyEntity | None = Field(
-        None, description="The base information to execute astrology"
+    required_info: InfoForAstrologyEntity = Field(
+        ..., description="The base information to execute astrology"
     )
     result: str = Field("", description="The result of astrology")
     result_voice_path: str = Field(
@@ -118,3 +131,15 @@ class WesternAstrologyStateEntity(BaseModel):
     created_at: datetime = Field(
         ..., description="The time when this state was created"
     )
+
+    @classmethod
+    def get_initial(cls, message_id: str = "", is_target: bool = False):
+        return cls(
+            message_id=message_id,
+            is_target=is_target,
+            required_info=InfoForAstrologyEntity.get_initial(),
+            result="",
+            result_voice_path="",
+            is_played=False,
+            created_at=datetime.now(),
+        )

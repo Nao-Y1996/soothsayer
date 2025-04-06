@@ -137,7 +137,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             .where(
                 and_(
                     WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
-                    WesternAstrologyStatusOrm.required_info == {},
+                    WesternAstrologyStatusOrm.required_info["name"].astext == "",
                     WesternAstrologyStatusOrm.result == "",
                 )
             )
@@ -155,7 +155,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                     WesternAstrologyStateEntity(
                         message_id=obj.message_id,
                         is_target=obj.is_target,
-                        required_info=None,
+                        required_info=InfoForAstrologyEntity(**obj.required_info),
                         result=obj.result,
                         result_voice_path=obj.result_voice_path,
                         is_played=obj.is_played,
@@ -175,7 +175,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             .where(
                 and_(
                     WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
-                    WesternAstrologyStatusOrm.required_info != {},
+                    WesternAstrologyStatusOrm.required_info["name"].astext != "",
                 )
             )
             .join(
@@ -221,7 +221,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             .where(
                 and_(
                     WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
-                    WesternAstrologyStatusOrm.required_info != {},
+                    WesternAstrologyStatusOrm.required_info["name"].astext != "",
                     WesternAstrologyStatusOrm.result == "",
                 )
             )
@@ -257,7 +257,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             .where(
                 and_(
                     WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
-                    WesternAstrologyStatusOrm.required_info != {},
+                    WesternAstrologyStatusOrm.required_info["name"].astext != "",
                     WesternAstrologyStatusOrm.result != "",
                     WesternAstrologyStatusOrm.result_voice_path == "",
                 )
@@ -294,7 +294,7 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
             .where(
                 and_(
                     WesternAstrologyStatusOrm.is_target == True,  # noqa: E712
-                    WesternAstrologyStatusOrm.required_info != {},
+                    WesternAstrologyStatusOrm.required_info["name"].astext != "",
                     WesternAstrologyStatusOrm.result != "",
                     WesternAstrologyStatusOrm.result_voice_path != "",
                 )
@@ -322,42 +322,6 @@ class WesternAstrologyStateRepositoryImpl(WesternAstrologyStateRepository):
                 ]
             except Exception as e:
                 logger.exception(f"Failed to get all with voice: {e}")
-                raise e
-
-    def add_initial(self, chat_ids: list[str], is_target_list: list[bool]) -> None:
-        """
-        未処理の占い結果をDBに保存する。
-        """
-        if len(chat_ids) != len(is_target_list):
-            raise ValueError("chat_ids and is_target_list must have the same length.")
-
-        values = [
-            {
-                "message_id": chat_id,
-                "is_target": is_target,
-                "required_info": {},
-                "is_played": False,
-            }
-            for chat_id, is_target in zip(chat_ids, is_target_list, strict=True)
-        ]
-        if not values:
-            return
-            # valuesが[]の時にはWesternAstrologyStateOrmのフィールドが全て空のデータをinsertしようとして
-            # message_idのnot null制約(primary key)に引っかかるため、ここでreturnする
-        stmt = (
-            pg_insert(WesternAstrologyStatusOrm)
-            .values(values)
-            .on_conflict_do_nothing(
-                index_elements=[WesternAstrologyStatusOrm.message_id]
-            )
-        )
-        with SessionLocal() as session:
-            try:
-                session.execute(stmt)
-                session.commit()
-            except Exception as e:
-                session.rollback()
-                logger.exception(f"Failed to add initial: {e}")
                 raise e
 
     def get_waiting_audio_play_state(self) -> list[WesternAstrologyStateEntity]:

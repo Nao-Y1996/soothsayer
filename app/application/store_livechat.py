@@ -3,10 +3,14 @@ from logging import DEBUG, getLogger
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from app.application.filter_yt_comment import is_astrology_target
+from app.application.filter_yt_comment import filter_astrology_target
 from app.application.thread_manager import ThreadTask
 from app.core.const import get_dummy_live_chat_message, is_test
-from app.domain.repositories import YoutubeLiveChatMessageRepository
+from app.domain.repositories import (
+    WesternAstrologyStateRepository,
+    YoutubeLiveChatMessageRepository,
+)
+from app.domain.westernastrology import WesternAstrologyStateEntity
 from app.domain.youtube.live import LiveChatMessageEntity
 from app.infrastructure.external.youtube.helper import (
     convert_chat_messages,
@@ -14,7 +18,6 @@ from app.infrastructure.external.youtube.helper import (
     get_live_chat_id,
     get_youtube_service,
 )
-from app.infrastructure.repositoriesImpl import WesternAstrologyStateRepositoryImpl
 
 POLLING_INTERVAL_DEFAULT: int = 5  # デフォルトのポーリング間隔（秒）
 
@@ -31,13 +34,11 @@ def extract_chat_from_response(response: Dict[str, Any]) -> List[LiveChatMessage
 
 
 class LivechatTask(ThreadTask):
-    # FIXME コンストラクタで、WesternAstrologyStateRepositoryImpl ではなく WesternAstrologyStateRepository を受け取るように修正する
-    #       add_initial メソッドが WesternAstrologyStateRepositoryImpl にしかないという設計上の問題に帰着する
 
     def __init__(
         self,
         name: str,
-        western_astrology_repo: WesternAstrologyStateRepositoryImpl,
+        western_astrology_repo: WesternAstrologyStateRepository,
         livechat_repo: YoutubeLiveChatMessageRepository,
     ):
         super().__init__(name)
@@ -104,9 +105,18 @@ class LivechatTask(ThreadTask):
 
                 # 占い対象の時は、占いの対象か判断して保存
                 if self.western_astrology_repo:  # FIXME: 意味のなさそうなif文
-                    chat_ids: list[str] = [chat.id for chat in chat_list]
-                    is_target_list: list[bool] = is_astrology_target(chat_list)
-                    self.western_astrology_repo.add_initial(chat_ids, is_target_list)
+                    target_chat_list: list[LiveChatMessageEntity] = (
+                        filter_astrology_target(chat_list)
+                    )
+                    western_astrology_targets: list[WesternAstrologyStateEntity] = []
+                    for chat in target_chat_list:
+                        western_astrology_targets.append(
+                            WesternAstrologyStateEntity.get_initial(
+                                message_id=chat.id,
+                                is_target=True,
+                            )
+                        )
+                    self.western_astrology_repo.save(western_astrology_targets)
 
                 next_page_token = chat_response.get("nextPageToken")
                 if not next_page_token:
