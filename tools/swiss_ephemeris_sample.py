@@ -14,7 +14,9 @@ def calc_swiss_ephemeris_sample() -> None:
     Swiss Ephemeris は、天文計算用のライブラリで、python経由では pyswisseph ライブラリがある
     アプリでの西洋占星術では pyswisseph 直接使用せずに、flatlib ライブラリを使用している
     flatlib は、pyswisseph をラップして、より使いやすいAPIを提供しているが、
-    pyswisseph の古いバージョン（2.08.00-1）を使用しており、更新も止まっているため将来的には pyswisseph を直接使用した方が良い。
+    pyswisseph の古いバージョン（2.08.00-1）を使用しており、更新も止まっている。
+    そのため本プロジェクトでは、pyswisseph 2.10.3.2 に依存する flatlibのforkリポジトリに依存させた。
+    将来的には pyswisseph を直接使用した方が良いかもしれない。
     ここでは、pyswisseph を直接使用して、天文計算を実行するサンプルを提供する
     """
     jd = swe.julday(2025, 1, 28, 12.0)
@@ -24,4 +26,5 @@ def calc_swiss_ephemeris_sample() -> None:
 
 
 if __name__ == "__main__":
+    print(f"swisseph version: {swe.__version__}")
     calc_swiss_ephemeris_sample()
