@@ -603,8 +603,8 @@ pyswisseph = ">=2.10.3.2,<3.0.0.0"
 [package.source]
 type = "git"
 url = "https://github.com/Nao-Y1996/flatlib.git"
-reference = "96b9340df1a548ca310b641605b194c29d58371a"
-resolved_reference = "96b9340df1a548ca310b641605b194c29d58371a"
+reference = "v0.2.4"
+resolved_reference = "d5fddb7125704a4816b2247accbea6429e45270a"
 
 [[package]]
 name = "fsspec"
@@ -3687,4 +3687,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "9f0aaac47b5acbd9129a20e4f69ae35e509ec4e966670077ab88e7763915d9c7"
+content-hash = "f9a59958cede3292e22beeb9f78893a2f9098ea242c8ae17046f20c8e3805f92"
