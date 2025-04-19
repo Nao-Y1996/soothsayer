@@ -27,7 +27,7 @@ sounddevice = "^0.5.1"
 soundfile = "^0.13.1"
 regex = "^2024.11.6"
 
-flatlib = { git = "https://github.com/Nao-Y1996/flatlib.git", rev = "96b9340df1a548ca310b641605b194c29d58371a" }
+flatlib = { git = "https://github.com/Nao-Y1996/flatlib.git", tag = "v0.2.4" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.9.4"
