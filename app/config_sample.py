@@ -16,11 +16,20 @@ grafana_url = "http://localhost:3000/dashboards"
 # TODO testモードで実行しても実際のyoutubeライブ配信のビデオIDが必要なので、ビデオIDもダミーする
 # TODO モードの切り替えを画面から行えるようにする
 
+# ===== TTSモデル設定 ======
+USE_LOCAL = True  # True: style-bert-vit2, False: elevenlabs
+# =========================
+
 # ===== style-bert-vit2 の連携 ======
 VOICE_HOST = "localhost"
 VOICE_PORT = 5050
 VOICE_MODEL_NAME = "amitaro"
 # ===================================
+
+# ======= elevenlabsの設定 =======
+ELEVENLABS_VOICE_ID = "Mv8AjrYZCBkdsmDHNwcB"
+ELEVENLABS_MODEL = "eleven_multilingual_v2"
+# ===============================
 
 # ======= 音声出力先の設定 ========
 AUDIO_DEVICE_NAME = ""  # ex: VB-Cable
