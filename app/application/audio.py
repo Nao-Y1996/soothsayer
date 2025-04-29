@@ -2,13 +2,25 @@ from logging import getLogger
 
 import sounddevice as sd
 import soundfile as sf
+from elevenlabs.client import ElevenLabs
 
-from app.config import AUDIO_DEVICE_NAME, VOICE_MODEL_NAME
+from app.config import (
+    AUDIO_DEVICE_NAME,
+    ELEVENLABS_MODEL,
+    ELEVENLABS_VOICE_ID,
+    VOICE_MODEL_NAME,
+)
+from app.core.const import ELEVENLABS_API_KEY
+from app.infrastructure.external.elevenlabs.tts import generate
 from app.infrastructure.external.stylebertvit2.voice import (
     generate_speech_with_style_bert_vit2,
 )
 
 logger = getLogger(__name__)
+
+client = ElevenLabs(
+    api_key=ELEVENLABS_API_KEY,
+)
 
 
 def play_audio_file(file_path: str) -> None:
@@ -62,12 +74,14 @@ def get_device_info():
     return info
 
 
-def txt_to_audiofile(text: str, audiofile_path: str) -> str:
+def txt_to_audiofile(text: str, audiofile_path: str, use_local=False) -> str:
     """
     テキストを音声に変換し、音声ファイルのパスを返す関数
 
     Parameters:
         text (str): 変換するテキスト
+        audiofile_path (str): 出力する音声ファイルのパス
+        use_local (bool): Trueの場合はローカルの音声モデルを使用する
 
     Returns:
         str: 音声ファイルのパス
@@ -75,10 +89,21 @@ def txt_to_audiofile(text: str, audiofile_path: str) -> str:
     Raises:
         IOError: 音声ファイルの生成に失敗した場合
     """
-    response = generate_speech_with_style_bert_vit2(
-        text, VOICE_MODEL_NAME, output_file=audiofile_path
-    )
-    if response.success:
-        return str(response.file_path)
+    if use_local:
+        response = generate_speech_with_style_bert_vit2(
+            text, VOICE_MODEL_NAME, output_file=audiofile_path
+        )
+        if response.success:
+            return str(response.file_path)
+        else:
+            raise IOError(response.error_message)
     else:
-        raise IOError(response.error_message)
+        try:
+            return generate(
+                text=text,
+                output_file=audiofile_path,
+                voice_id=ELEVENLABS_VOICE_ID,
+                model_id=ELEVENLABS_MODEL,
+            )
+        except Exception as e:
+            raise IOError(f"Error generating audio by ElevenLabs: {e}")

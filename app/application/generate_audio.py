@@ -4,6 +4,7 @@ from logging import getLogger
 from app.application.audio import txt_to_audiofile
 from app.application.text_service import remove_enclosed
 from app.application.thread_manager import ThreadTask
+from app.config import USE_LOCAL
 from app.core.const import AUDIO_DIR
 from app.domain.repositories import WesternAstrologyStateRepository
 from app.domain.westernastrology import WesternAstrologyStateEntity
@@ -40,6 +41,7 @@ def result_to_voice(astrology_repo: WesternAstrologyStateRepository) -> None:
                         result
                     ),  # TODO: 音声化し使用したテキストを保存する
                     audiofile_path=AUDIO_DIR / f"{astrology_state.message_id}.wav",
+                    use_local=USE_LOCAL,
                 )
                 astrology_state.result_voice_path = audio_file_path
                 logger.info(

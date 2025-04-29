@@ -24,6 +24,7 @@ load_dotenv(dotenv_path=ROOT / ".env", override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 # PostgreSQL
 POSTGRES_USER = os.getenv("POSTGRES_USER")
